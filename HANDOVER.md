@@ -6,11 +6,11 @@ demo video recording, or dry-run verification. This doc tells you
 exactly what's built, what's pending, how to run it, how to record the
 demo, and where every file lives.
 
-> CLAUDE.md hard rule: **Sahil writes the narration himself.** He
-> defends it on stage in front of IAS officers and VCs. Speaker notes,
-> verbatim sentences, and what-to-say belong to him alone. This doc
-> only gives you the *structural* artifacts — the slide skeleton, the
-> shot list, the recovery checklist, the reference numbers.
+> **Sahil writes the narration himself.** He defends it on stage in
+> front of IAS officers and VCs. Speaker notes, verbatim sentences, and
+> what-to-say belong to him alone. This doc only gives you the
+> *structural* artifacts — the slide skeleton, the shot list, the
+> recovery checklist, the reference numbers.
 
 ---
 
@@ -195,7 +195,6 @@ ai_bharat/
 ├── README.md                    overview, links to docs
 ├── HANDOVER.md                  ← you are here
 ├── FREEZE.md                    frozen-build state record
-├── CLAUDE.md                    AI assistant rules (project-specific)
 ├── manage.py                    Django entry point
 ├── pyproject.toml               Python deps
 ├── pytest.ini                   test config (slow + network markers)

@@ -52,7 +52,7 @@ Bidder C:   ABS  PASS ABS  ABS  PASS PASS PASS    (4 PASS, 1 ABSTAIN low-conf GS
 ## What CAN change after this freeze
 
 - Comments + docs (typos, screenshots)
-- Sahil's video narration (per CLAUDE.md, his deliverable)
+- Sahil's video narration (his deliverable — he defends it on stage)
 - The team's slide design (PPT/Keynote — the outline is in `docs/deck_outline.md`)
 - A re-run of `bootstrap_demo --restore-snapshot` on demo morning
 - A fresh `verify_demo` run on demo morning (just confirms freeze is intact)
