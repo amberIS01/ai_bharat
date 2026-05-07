@@ -1,0 +1,43 @@
+{% comment %}
+  Single criterion row — used in criteria_review.html and as the HTMX
+  swap target for criterion_inline_edit. Mandatory vs optional is
+  surfaced via a left rule colour (fail = mandatory, sepia = optional).
+{% endcomment %}
+<article id="criterion-{{ c.id }}"
+         style="display:grid;grid-template-columns:60px 1fr auto;gap:16px;padding:14px 16px;border-left:3px solid {% if c.mandatory %}var(--fail){% else %}var(--sepia-soft){% endif %};background:var(--paper);border-bottom:var(--rule-line);align-items:start">
+
+  {% if edit_error %}
+  <div style="grid-column:1/-1" class="message is-error">
+    Inline edit rejected — {{ edit_error }}
+  </div>
+  {% endif %}
+
+  <div style="font-family:'JetBrains Mono',monospace;font-size:var(--fs-xs);color:var(--sepia);padding-top:2px">
+    {{ c.code }}
+  </div>
+
+  <div>
+    <div style="font-family:'Spectral',serif;font-weight:600;font-size:var(--fs-md);line-height:1.25">{{ c.title }}</div>
+    <p style="margin:6px 0 0;font-size:var(--fs-sm);color:var(--ink-soft);line-height:1.5">{{ c.requirement_text }}</p>
+    {% if c.source_clause_block %}
+    <div class="hash-cell" style="margin-top:6px;color:var(--sepia)">
+      cited from RFP block #{{ c.source_clause_block.block_index }} · page {{ c.source_clause_block.page_no }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;min-width:120px">
+    <button type="button"
+            hx-post="{% url 'officer:criterion_inline_edit' c.id %}"
+            hx-vals='{"field": "mandatory", "value": "{% if c.mandatory %}false{% else %}true{% endif %}"}'
+            hx-target="#criterion-{{ c.id }}"
+            hx-swap="outerHTML"
+            class="pill {% if c.mandatory %}is-fail{% else %}is-missing{% endif %}"
+            style="cursor:pointer;border:1px solid currentColor"
+            title="Click to toggle status — change is appended to the audit chain.">
+      {% if c.mandatory %}MANDATORY{% else %}OPTIONAL{% endif %}
+    </button>
+    <span class="pill" style="font-size:10px">{{ c.type|upper }}</span>
+  </div>
+
+</article>

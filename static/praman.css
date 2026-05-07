@@ -1,0 +1,1278 @@
+/* ==========================================================================
+   Praman — "Bharat Ledger" design system
+   --------------------------------------------------------------------------
+   Document-grade authority for a CRPF tender-evaluation tool. Feels like a
+   sealed CAG audit report rendered in HTML, not a SaaS dashboard.
+   --------------------------------------------------------------------------
+   Typography  : Tiro Devanagari Hindi (logo) + Spectral (display) +
+                 Source Serif 4 (body) + JetBrains Mono (hashes/IDs)
+   Palette     : Aged paper, ink black, sepia, judicial gold, oxblood, forest
+   Density     : Ledger rules (no zebra), stamp-seal hash badges, sharp tables
+   Inspiration : The Markup, mempool.space, Etherscan, RBI annual reports,
+                 Wikipedia article history, National Library of Norway
+   ========================================================================== */
+
+/* ---- Color + spacing tokens ---------------------------------------------- */
+
+:root {
+  /* "Ledger" palette — single-accent on warm paper */
+  --paper:        #F4EFE6;
+  --paper-deep:   #ECE5D7;
+  --paper-edge:   #DDD2BE;
+  --ink:          #1C1A17;
+  --ink-soft:     #2A2723;
+  --sepia:        #5C5347;
+  --sepia-soft:   #8A7F70;
+  --rule:         rgba(28, 26, 23, 0.18);
+  --rule-strong:  rgba(28, 26, 23, 0.42);
+
+  /* Verdict semantics — ledger, not traffic-light */
+  --pass:         #A8842C;     /* judicial gold — sealed/verified */
+  --pass-bg:      #F4EBC9;
+  --fail:         #7A1E1E;     /* oxblood — struck through */
+  --fail-bg:      #F0D9D2;
+  --abstain:      #2C3E2D;     /* forest ink — held for review */
+  --abstain-bg:   #DCE2D5;
+  --missing:      #8A7F70;     /* sepia — no fact extracted */
+  --missing-bg:   #E5DDCB;
+
+  /* Type scale (tuned for Source Serif 4 at 16px base) */
+  --fs-xs:    0.75rem;
+  --fs-sm:    0.875rem;
+  --fs-base:  1rem;
+  --fs-md:    1.0625rem;
+  --fs-lg:    1.25rem;
+  --fs-xl:    1.5rem;
+  --fs-2xl:   1.875rem;
+  --fs-3xl:   2.5rem;
+
+  /* Spatial rhythm */
+  --rule-line: 1px solid var(--rule);
+  --rule-line-strong: 1px solid var(--rule-strong);
+  --shadow-sealed: 0 1px 0 rgba(28, 26, 23, 0.06), 0 0 0 1px var(--rule);
+}
+
+/* ---- Reset + base typography --------------------------------------------- */
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
+  font-size: 16px;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "lnum" 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: var(--fs-base);
+  line-height: 1.55;
+  /* SVG paper grain — fractal noise at 0.045 opacity. Sparse enough to feel
+     like tooth, not loud enough to fight the type. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.10 0 0 0 0 0.09 0 0 0 0.045 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* Display heads use Spectral — narrower, more institutional than a humanist
+   serif, used for page titles and section heads only. */
+h1, h2, h3, .display {
+  font-family: 'Spectral', 'Source Serif 4', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.18;
+  color: var(--ink);
+}
+h1, .h1 { font-size: var(--fs-2xl); font-weight: 600; }
+h2, .h2 { font-size: var(--fs-xl); }
+h3, .h3 { font-size: var(--fs-lg); font-weight: 500; }
+
+/* Devanagari — only for the wordmark + ceremonial accents. */
+.deva {
+  font-family: 'Tiro Devanagari Hindi', 'Noto Serif Devanagari', serif;
+  font-feature-settings: "akhn" 1, "rphf" 1, "blwf" 1;
+}
+
+/* Monospace — for SHA-256, rule_ids, ISO timestamps. JetBrains Mono.
+   `0` and `O`, `1` and `l` must be visually unambiguous when an officer is
+   reading a hash off a screen mid-demo. */
+code, kbd, pre, .mono {
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-feature-settings: "calt" 0;
+  font-variant-ligatures: none;
+}
+
+a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--rule-strong);
+  transition: text-decoration-color 0.12s ease, color 0.12s ease;
+}
+a:hover { text-decoration-color: var(--pass); color: var(--ink); }
+
+/* ---- Page chrome: masthead + sidebar layout ----------------------------- */
+
+.masthead {
+  background: var(--paper);
+  border-bottom: var(--rule-line);
+  padding: 14px 0 12px;
+  position: relative;
+}
+.masthead::after {
+  /* Hairline rule under the header — like a newspaper masthead.
+     Two stacked lines: a thicker outer + a thinner inner (a "double rule"). */
+  content: "";
+  display: block;
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--rule);
+}
+.masthead-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 22px;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.wordmark .deva {
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+.wordmark .latin {
+  font-family: 'Spectral', serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-left: 1px solid var(--rule-strong);
+  padding-left: 10px;
+  margin-left: 2px;
+}
+.wordmark a { text-decoration: none; }
+
+.masthead-meta {
+  text-align: right;
+  font-size: var(--fs-xs);
+  color: var(--sepia);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.masthead-meta strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.masthead-meta a {
+  color: var(--sepia);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--rule-strong);
+}
+.masthead-meta a:hover { color: var(--ink); }
+
+.masthead-strapline {
+  grid-column: 1 / -1;
+  font-family: 'Spectral', serif;
+  font-style: italic;
+  font-size: var(--fs-sm);
+  color: var(--sepia);
+  margin-top: 2px;
+  letter-spacing: 0.005em;
+}
+
+.layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px 36px 80px;
+  min-width: 0;
+}
+@media (max-width: 880px) {
+  .layout { padding: 12px 18px 48px; }
+}
+
+/* Sidebar — vertical pipeline rail. Numbered like a court docket. */
+.docket {
+  position: sticky;
+  top: 24px;
+  padding: 18px 0 18px 0;
+  border-right: var(--rule-line);
+  font-size: var(--fs-sm);
+}
+.docket-label {
+  font-family: 'Spectral', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: var(--fs-xs);
+  color: var(--sepia);
+  margin: 0 16px 14px;
+  font-weight: 500;
+}
+.docket-step {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  align-items: baseline;
+  gap: 0;
+  padding: 9px 16px 9px 0;
+  border-left: 2px solid transparent;
+  margin-left: -1px;
+  text-decoration: none;
+  color: var(--ink);
+  font-family: 'Source Serif 4', serif;
+}
+.docket-step .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-xs);
+  color: var(--sepia);
+  letter-spacing: 0.02em;
+  text-align: right;
+  padding-right: 12px;
+}
+.docket-step .label {
+  font-size: var(--fs-sm);
+  color: var(--sepia);
+}
+.docket-step.is-active {
+  border-left-color: var(--pass);
+  background: linear-gradient(to right, rgba(168, 132, 44, 0.08), transparent 60%);
+}
+.docket-step.is-active .num { color: var(--ink); font-weight: 600; }
+.docket-step.is-active .label { color: var(--ink); font-weight: 600; }
+.docket-step.is-disabled .num,
+.docket-step.is-disabled .label { color: var(--sepia-soft); cursor: not-allowed; }
+.docket-step:hover:not(.is-disabled) {
+  background: rgba(168, 132, 44, 0.05);
+}
+.docket-step:hover:not(.is-disabled) .label { color: var(--ink); }
+
+.docket-foot {
+  margin-top: 14px;
+  padding: 10px 16px 0;
+  border-top: var(--rule-line);
+  font-size: var(--fs-xs);
+  color: var(--sepia);
+}
+.docket-foot a { color: var(--sepia); border-bottom: 1px dotted var(--rule-strong); text-decoration: none; }
+.docket-foot a + a { margin-left: 12px; }
+
+/* ---- Page main: title block + content ------------------------------------ */
+
+.main { padding: 18px 0 80px; min-width: 0; }
+
+.crumb {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--sepia);
+  text-transform: uppercase;
+}
+.crumb a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  transition: text-decoration-color 0.12s ease, color 0.12s ease;
+}
+.crumb a:hover {
+  color: var(--pass);
+  text-decoration-color: var(--pass);
+}
+
+.title-block {
+  border-top: 2px solid var(--ink);
+  border-bottom: var(--rule-line);
+  padding: 18px 0 14px;
+  margin: 12px 0 22px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+.title-block h1 { margin: 0; font-size: var(--fs-2xl); }
+.title-block .subtitle {
+  font-family: 'Spectral', serif;
+  font-style: italic;
+  color: var(--sepia);
+  font-size: var(--fs-md);
+  margin-top: 4px;
+}
+.title-block .actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---- Pills, buttons, stamps --------------------------------------------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+}
+.pill::before { content: "●"; font-size: 8px; line-height: 1; }
+.pill.is-pass     { color: var(--pass);    border-color: var(--pass);    }
+.pill.is-fail     { color: var(--fail);    border-color: var(--fail);    }
+.pill.is-abstain  { color: var(--abstain); border-color: var(--abstain); }
+.pill.is-missing  { color: var(--missing); border-color: var(--rule-strong); }
+.pill.is-pass    { background: var(--pass-bg); }
+.pill.is-fail    { background: var(--fail-bg); }
+.pill.is-abstain { background: var(--abstain-bg); }
+.pill.is-missing { background: var(--missing-bg); }
+
+/* Buttons — restrained. Filed, not saas. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.btn:hover { background: var(--ink); color: var(--paper); }
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn-primary:hover { background: var(--ink-soft); color: var(--paper); }
+.btn-seal {
+  background: var(--pass);
+  color: #fff;
+  border-color: var(--pass);
+}
+.btn-seal:hover { background: #8E6D1F; border-color: #8E6D1F; color: #fff; }
+.btn-ghost {
+  background: transparent;
+  color: var(--sepia);
+  border-color: var(--rule-strong);
+}
+.btn-ghost:hover { background: var(--paper-deep); color: var(--ink); border-color: var(--ink); }
+.btn-sm { padding: 4px 10px; font-size: var(--fs-xs); letter-spacing: 0.04em; }
+
+/* Stamp-seal hash badge — circular border, dashed inner ring, monospace
+   hash. Used for AuditEntry.this_hash and signed-PDF SHA-256 displays. */
+.seal {
+  display: inline-grid;
+  place-items: center;
+  width: 64px; height: 64px;
+  border: 2px solid var(--pass);
+  border-radius: 50%;
+  position: relative;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--pass);
+  background: var(--pass-bg);
+  letter-spacing: 0;
+  line-height: 1.05;
+  text-align: center;
+}
+.seal::before {
+  content: "";
+  position: absolute; inset: 4px;
+  border: 1px dashed var(--pass);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+.seal-label {
+  position: absolute;
+  top: -10px; left: 50%; transform: translateX(-50%);
+  background: var(--paper);
+  padding: 0 6px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pass);
+}
+.seal-hash { z-index: 1; }
+.seal.is-broken    { border-color: var(--fail); color: var(--fail); background: var(--fail-bg); }
+.seal.is-broken::before { border-color: var(--fail); }
+.seal.is-broken .seal-label { color: var(--fail); }
+
+/* ---- Cards, frames, evidence boxes --------------------------------------- */
+
+.frame {
+  background: var(--paper);
+  border: var(--rule-line-strong);
+  padding: 18px 22px;
+}
+.frame-tight { padding: 12px 16px; }
+.frame-titled {
+  border-top: 2px solid var(--ink);
+}
+.frame > .frame-title {
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--sepia);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.frame.note {
+  background: var(--paper-deep);
+  border-left: 3px solid var(--pass);
+  padding: 14px 18px;
+  font-style: italic;
+  color: var(--sepia);
+  font-family: 'Spectral', serif;
+}
+.frame.warn {
+  background: #F4E9CC;
+  border-left: 3px solid var(--pass);
+  font-style: normal;
+  color: var(--ink);
+  font-family: 'Source Serif 4', serif;
+}
+.frame.alert {
+  background: var(--fail-bg);
+  border-left: 3px solid var(--fail);
+  color: var(--fail);
+  font-family: 'Source Serif 4', serif;
+}
+
+/* ---- Ledger table — the marquee data viz pattern ------------------------- */
+
+.ledger {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.ledger thead th {
+  text-align: left;
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--sepia);
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--ink);
+}
+.ledger tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.ledger tbody tr:hover td { background: rgba(168, 132, 44, 0.04); }
+.ledger td.num,
+.ledger th.num {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.ledger td.compact { padding: 6px 12px; }
+
+/* "Show this row's hash" hover affordance for audit-chain rows. */
+.ledger .seq-num {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--sepia);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.02em;
+}
+.ledger .hash-cell {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--sepia);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+
+/* ---- Hash chain — horizontal mempool-style block train ------------------- */
+
+.hashchain {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  padding: 4px 0;
+  gap: 4px;
+}
+.hashchain-block {
+  flex: 0 0 110px;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  padding: 8px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--sepia);
+  position: relative;
+}
+.hashchain-block + .hashchain-block::before {
+  content: "›";
+  position: absolute; left: -10px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: var(--rule-strong);
+  font-family: 'Spectral', serif;
+}
+.hashchain-block .ev {
+  font-size: 10px;
+  color: var(--ink);
+  font-weight: 600;
+  display: block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.hashchain-block .seq {
+  font-size: 9px; color: var(--sepia); display: block;
+}
+.hashchain-block .hash {
+  font-size: 10px; color: var(--ink-soft); display: block;
+  margin-top: 2px;
+}
+
+/* ---- Forms ---------------------------------------------------------------- */
+
+input[type="text"], input[type="password"], input[type="email"],
+input[type="file"], textarea, select {
+  font-family: 'Source Serif 4', serif;
+  font-size: var(--fs-base);
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
+  width: 100%;
+  color: var(--ink);
+  transition: border-color 0.1s ease, background 0.1s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: 0;
+  border-color: var(--ink);
+  background: #FAF6EC;
+}
+label {
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sepia);
+  margin-bottom: 4px;
+  display: block;
+  font-weight: 500;
+}
+.help, p.help, small.help {
+  font-family: 'Spectral', serif;
+  font-style: italic;
+  color: var(--sepia);
+  font-size: var(--fs-xs);
+}
+
+/* ---- Messages (Django auth, success/error/warning) ----------------------- */
+
+.message {
+  padding: 12px 18px;
+  border-left: 3px solid var(--ink);
+  background: var(--paper-deep);
+  margin-bottom: 12px;
+  font-family: 'Source Serif 4', serif;
+  font-size: var(--fs-sm);
+}
+.message.is-error    { border-color: var(--fail); background: var(--fail-bg); color: var(--fail); }
+.message.is-success  { border-color: var(--pass); background: var(--pass-bg); color: #6B5419; }
+.message.is-warning  { border-color: var(--abstain); background: var(--abstain-bg); color: var(--abstain); }
+
+/* ---- Drop-cap (used sparingly, e.g. signoff cover paragraph) ------------- */
+
+.drop-cap::first-letter {
+  font-family: 'Spectral', serif;
+  font-weight: 700;
+  font-size: 3.6em;
+  float: left;
+  line-height: 0.9;
+  margin: 0.05em 0.08em 0 0;
+  color: var(--pass);
+}
+
+/* ---- Audit pill in masthead --------------------------------------------- */
+
+.audit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  color: var(--ink);
+}
+.audit-pill::before {
+  content: "●"; color: var(--pass); font-size: 9px;
+}
+.audit-pill.is-broken::before { color: var(--fail); }
+.audit-pill.is-loading { color: var(--sepia); }
+.audit-pill.is-loading::before { color: var(--sepia-soft); }
+
+/* ---- Subtle key-value rows (verdict bindings, fact metadata) ------------ */
+
+.kv {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 0;
+  border-top: var(--rule-line);
+  font-size: var(--fs-sm);
+}
+.kv > dt {
+  padding: 8px 14px 8px 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--sepia);
+}
+.kv > dd {
+  padding: 8px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--rule);
+}
+.kv > dd .mono { color: var(--ink); }
+
+/* ---- Eval grid (AG-Grid override) — make it look like a ledger ---------- */
+
+.ag-theme-quartz, .ag-theme-praman {
+  --ag-background-color: var(--paper);
+  --ag-foreground-color: var(--ink);
+  --ag-header-background-color: var(--paper);
+  --ag-header-foreground-color: var(--sepia);
+  --ag-odd-row-background-color: var(--paper);
+  --ag-row-hover-color: rgba(168, 132, 44, 0.06);
+  --ag-borders: solid 1px;
+  --ag-border-color: var(--rule);
+  --ag-cell-horizontal-border: 1px solid var(--rule);
+  --ag-row-border-color: var(--rule);
+  --ag-font-family: 'Source Serif 4', serif;
+  --ag-font-size: 14px;
+  --ag-header-height: 44px;
+  --ag-row-height: 56px;
+  --ag-borders-critical: solid 2px;
+  --ag-border-color-critical: var(--ink);
+  font-family: 'Source Serif 4', serif !important;
+}
+.ag-theme-quartz .ag-header,
+.ag-theme-praman .ag-header {
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper);
+}
+.ag-theme-quartz .ag-header-cell-text,
+.ag-theme-praman .ag-header-cell-text {
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--sepia);
+}
+
+/* AG-Grid cell pill — ledger-style flat tag, not a balloon. Sharp
+   corners, tight padding, fits in narrow auto-sized columns. */
+.ag-cell-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 9px 4px;
+  min-width: 64px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  background: transparent;
+  line-height: 1;
+}
+.ag-cell-pill.PASS    { color: #6B5419;        background: var(--pass-bg);    border-color: var(--pass); }
+.ag-cell-pill.FAIL    { color: var(--fail);    background: var(--fail-bg);    }
+.ag-cell-pill.ABSTAIN { color: var(--abstain); background: var(--abstain-bg); }
+.ag-cell-pill.MISSING { color: var(--missing); background: var(--missing-bg); }
+
+/* AG-Grid cell wrapper: vertically center the pill in the row. */
+.ag-theme-praman .ag-cell { display: flex; align-items: center; }
+
+/* ---- Footer ------------------------------------------------------------- */
+
+.colophon {
+  border-top: var(--rule-line);
+  padding: 18px 28px;
+  max-width: 1280px;
+  margin: 60px auto 0;
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  color: var(--sepia);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  display: flex;
+  justify-content: space-between;
+}
+.colophon .deva { text-transform: none; letter-spacing: 0.02em; font-style: normal; }
+
+/* ---- Utility classes for layout (kept tiny — Tailwind handles most) ----- */
+
+.stack > * + * { margin-top: var(--stack-gap, 14px); }
+.stack-tight { --stack-gap: 8px; }
+.stack-loose { --stack-gap: 22px; }
+.row { display: flex; gap: 14px; align-items: center; }
+.row.between { justify-content: space-between; }
+.muted { color: var(--sepia); }
+.muted-soft { color: var(--sepia-soft); }
+.eyebrow {
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--sepia);
+  font-weight: 500;
+}
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ========================================================================
+   MOTION — moments of consequence, not decoration
+   --------------------------------------------------------------------------
+   Thesis: serious audit tools animate state transitions, never data
+   itself. The motion budget is spent on:
+     1. Page entry (gravity: title rule strokes in, ledger rows stagger up)
+     2. Stamp impress (the verdict + audit-chain seals press into paper)
+     3. Hash-chain drawing (mempool-style audit timeline draws forward)
+     4. Audit-pill pulse (chain advanced — ink-spread on the pill)
+     5. View Transitions across HTMX swaps + multi-page navigation
+   No bounce, no glitter, no aurora behind data. Every animation has
+   purpose-driven duration in the 220–600ms band.
+   ========================================================================*/
+
+/* ========================================================================
+   HERO — the dark band on the dashboard. This is the visual anchor.
+   ========================================================================*/
+.hero {
+  position: relative;
+  margin: 4px 0 32px;
+  padding: 38px 32px 30px;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 0%, rgba(168, 132, 44, 0.16), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 80% 100%, rgba(122, 30, 30, 0.12), transparent 70%),
+    linear-gradient(180deg, #0f0d0a 0%, #1a1612 100%);
+  color: var(--paper);
+  overflow: hidden;
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--rule-strong);
+}
+.hero::before {
+  /* fine grain on the dark — same noise pattern, lower opacity */
+  content: "";
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.92 0 0 0 0 0.85 0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: rgba(244, 235, 201, 0.7);
+  margin-bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 28px; height: 1px;
+  background: rgba(168, 132, 44, 0.9);
+}
+/* Hero — single-column flow. Headline row sits left/right, stats span
+   bottom. No more two-column grid void. */
+.hero-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+  margin-top: 8px;
+}
+@media (max-width: 880px) {
+  .hero-row { grid-template-columns: 1fr; gap: 24px; }
+}
+
+.hero-headline-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hero-cta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 480px;
+}
+
+.hero-numeric {
+  font-family: 'Spectral', serif;
+  font-weight: 600;
+  font-size: clamp(4rem, 7vw, 5.6rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  color: #E5B556;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+.hero-tag {
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-md);
+  font-style: italic;
+  color: rgba(244, 235, 201, 0.78);
+  margin: 0;
+  letter-spacing: 0.005em;
+}
+.hero-tag em {
+  font-style: italic;
+  color: #E5B556;
+  font-weight: 500;
+}
+.hero-blurb {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: var(--fs-md);
+  line-height: 1.55;
+  color: rgba(244, 235, 201, 0.82);
+  margin: 0;
+  letter-spacing: 0.001em;
+}
+
+.hero-stats {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(168, 132, 44, 0.3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 18px 32px;
+}
+.hero-stat-num {
+  font-family: 'Spectral', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--paper);
+  line-height: 1;
+}
+.hero-stat-lbl {
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(244, 235, 201, 0.55);
+  margin-top: 6px;
+}
+
+/* Light-paper distribution strip below the hero */
+.dist-strip {
+  background: var(--paper-deep);
+  padding: 22px 26px;
+  border: 1px solid var(--rule-strong);
+  border-top: 2px solid var(--ink);
+}
+.verdict-bar-light {
+  display: flex;
+  height: 18px;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  overflow: hidden;
+}
+.swatch {
+  display: inline-block;
+  width: 10px; height: 10px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.swatch-pass    { background: linear-gradient(90deg, #C8A248, #E5B556); }
+.swatch-fail    { background: linear-gradient(90deg, #8C2424, #B83030); }
+.swatch-abstain { background: linear-gradient(90deg, #3A5240, #4F6E55); }
+
+/* Verdict-distribution bar — horizontal stacked colored segments,
+   visible at-a-glance summary of the entire system's verdicts. */
+.verdict-bar {
+  display: flex;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(168, 132, 44, 0.2);
+  overflow: hidden;
+  margin-top: 18px;
+}
+.verdict-bar-seg {
+  height: 100%;
+  position: relative;
+  transform-origin: left center;
+}
+.verdict-bar-seg.pass    { background: linear-gradient(90deg, #C8A248, #E5B556); }
+.verdict-bar-seg.fail    { background: linear-gradient(90deg, #8C2424, #B83030); }
+.verdict-bar-seg.abstain { background: linear-gradient(90deg, #3A5240, #4F6E55); }
+.verdict-bar-seg.missing { background: rgba(138, 127, 112, 0.5); }
+
+.verdict-bar-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-xs);
+  color: rgba(244, 235, 201, 0.7);
+}
+.verdict-bar-legend .swatch {
+  display: inline-block; width: 10px; height: 10px;
+  margin-right: 6px; vertical-align: middle;
+}
+.verdict-bar-legend .swatch.pass    { background: #E5B556; }
+.verdict-bar-legend .swatch.fail    { background: #B83030; }
+.verdict-bar-legend .swatch.abstain { background: #4F6E55; }
+.verdict-bar-legend .swatch.missing { background: #8A7F70; }
+
+/* Hero-embedded mini-hashviz — overrides paper background. The compact
+   layout in praman-motion.js detects narrow containers and renders
+   smaller blocks (78×80 instead of 130×110), so the strip is legible. */
+.hero .hashviz {
+  background: rgba(15, 13, 10, 0.5);
+  border-color: rgba(168, 132, 44, 0.3);
+  border-top-color: rgba(168, 132, 44, 0.6);
+  height: auto;
+  min-height: 110px;
+  max-height: 130px;
+}
+.hero .hashviz svg text { fill: rgba(244, 235, 201, 0.85) !important; }
+.hero .hashviz svg rect { fill: rgba(15, 13, 10, 0.4) !important; }
+.hero .hashviz-link { stroke: rgba(229, 181, 86, 0.5); }
+.hero .hashviz::-webkit-scrollbar-thumb {
+  background: rgba(229, 181, 86, 0.4);
+}
+
+/* CTA — magnetic-feel button, used for the headline action on hero. */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  background: #E5B556;
+  color: #0f0d0a;
+  font-family: 'Spectral', serif;
+  font-weight: 600;
+  font-size: var(--fs-md);
+  letter-spacing: 0.02em;
+  border: 1px solid #E5B556;
+  text-decoration: none;
+  margin-top: 22px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.cta::after {
+  content: "→";
+  font-size: 1.1em;
+  transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.cta:hover {
+  background: #FFD17A;
+  border-color: #FFD17A;
+  transform: translateY(-1px);
+}
+.cta:hover::after { transform: translateX(4px); }
+
+/* ========================================================================
+   Custom-property registrations follow.
+   ======================================================================== */
+
+/* Registered custom properties — the @property rule lets us animate
+   ordinarily-unanimatable things (gradient color, length, hash hue).
+   Falls back gracefully on browsers that don't support @property. */
+@property --pulse-spread {
+  syntax: "<length>";
+  initial-value: 0px;
+  inherits: false;
+}
+@property --pulse-opacity {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: false;
+}
+@property --seal-ink {
+  syntax: "<color>";
+  initial-value: rgba(168, 132, 44, 0);
+  inherits: false;
+}
+
+/* ---- View Transitions — used both for cross-document nav and HTMX
+       swaps wrapped in document.startViewTransition(). The default 250ms
+       cross-fade is replaced with a short ledger-paper feel: opacity +
+       2px y-shift, no scale. ------------------------------------------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 240ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+::view-transition-old(root) {
+  animation-name: praman-fade-out;
+}
+::view-transition-new(root) {
+  animation-name: praman-fade-in;
+}
+@keyframes praman-fade-out {
+  to { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes praman-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+/* Named view-transitions — the masthead, audit pill, and active step
+   in the docket persist visually across navigations (Linear-style). */
+.masthead { view-transition-name: praman-masthead; }
+.audit-pill { view-transition-name: praman-audit-pill; }
+.docket-step.is-active { view-transition-name: praman-docket-active; }
+
+/* ---- Entry stagger — applied via .reveal class set by GSAP, falls
+       back to a CSS-only entry via @starting-style for browsers that
+       support it (Chrome 117+, Safari 17.5+). --------------------------- */
+@supports (transition-behavior: allow-discrete) {
+  .title-block, .crumb, .frame, .verdict-stamp {
+    transition: opacity 320ms cubic-bezier(0.32, 0.72, 0, 1),
+                transform 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  @starting-style {
+    .title-block, .crumb, .frame, .verdict-stamp {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+}
+/* Tables are data-critical — never hide via animation. */
+.ledger { opacity: 1; }
+
+/* ---- Seal stamp animation — the verdict stamp on drilldown PRESSES
+       into the page on initial reveal. Three keyframes:
+         (1) hover above paper (scale 1.4, no ink),
+         (2) impact (scale 0.92, ink spreads under the seal),
+         (3) settle (scale 1.0, full ink visible).
+       320ms total. Cued by GSAP, falls back to CSS animation. ----------- */
+@keyframes seal-impress {
+  0% {
+    transform: rotate(-4deg) scale(1.45);
+    opacity: 0;
+    filter: blur(2px);
+  }
+  55% {
+    transform: rotate(-4deg) scale(0.92);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: rotate(-4deg) scale(1);
+    opacity: 1;
+  }
+}
+.verdict-stamp.is-impressed {
+  animation: seal-impress 380ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* Ink-spread halo behind the verdict stamp — appears 80ms after impact. */
+.verdict-stamp::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--seal-ink) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+  transition: --seal-ink 200ms ease-out;
+}
+.verdict-stamp.is-pass.is-impressed::after { --seal-ink: rgba(168, 132, 44, 0.18); }
+.verdict-stamp.is-fail.is-impressed::after { --seal-ink: rgba(122, 30, 30, 0.18); }
+.verdict-stamp.is-abstain.is-impressed::after { --seal-ink: rgba(44, 62, 45, 0.18); }
+
+/* ---- Audit-pill pulse — fires when HTMX swaps the pill back in
+       (i.e. the chain advanced). Ink-spread radial pulse outward. ------ */
+.audit-pill {
+  position: relative;
+  transition: color 180ms ease-out;
+}
+.audit-pill::before {
+  content: "●";
+  color: var(--pass);
+  font-size: 9px;
+}
+.audit-pill::after {
+  content: "";
+  position: absolute;
+  left: 8px; top: 50%;
+  width: 4px; height: 4px;
+  margin-top: -2px;
+  border-radius: 50%;
+  background: var(--pass);
+  box-shadow: 0 0 0 var(--pulse-spread) rgba(168, 132, 44, var(--pulse-opacity));
+  pointer-events: none;
+  transition: --pulse-spread 800ms ease-out, --pulse-opacity 800ms ease-out;
+}
+.audit-pill.is-pulsing::after {
+  --pulse-spread: 22px;
+  --pulse-opacity: 0;
+}
+
+/* ---- Hash-chain SVG — drawn forward via stroke-dashoffset transition,
+       hover on a block reveals the full hash. The drawing itself is
+       triggered by GSAP+ScrollTrigger when the SVG enters viewport. ---- */
+.hashviz {
+  width: 100%;
+  height: 240px;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-top: 2px solid var(--ink);
+  position: relative;
+  /* The SVG inside has fixed width = totalW. When totalW > container,
+     overflow:auto provides horizontal scroll; when ≤ container, the
+     SVG centers naturally. */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+/* Subtle scrollbar styling — matches the ledger feel, doesn't shout. */
+.hashviz::-webkit-scrollbar { height: 6px; }
+.hashviz::-webkit-scrollbar-track { background: transparent; }
+.hashviz::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border-radius: 3px;
+}
+.hashviz::-webkit-scrollbar-thumb:hover { background: var(--sepia); }
+.hashviz-block {
+  cursor: pointer;
+  transition: transform 200ms ease-out, filter 200ms ease-out;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+.hashviz-block:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 2px 0 rgba(28, 26, 23, 0.16));
+}
+.hashviz-block.is-current { animation: chain-pulse 1800ms ease-out infinite; }
+@keyframes chain-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(168, 132, 44, 0)); }
+  50%      { filter: drop-shadow(0 0 6px rgba(168, 132, 44, 0.5)); }
+}
+
+/* The lines connecting hash blocks — drawn in by GSAP DrawSVGPlugin. */
+.hashviz-link {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: 1;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+}
+.hashviz-link.is-drawn { stroke-dashoffset: 0; }
+
+/* ---- Counter — used for the "№ N entries appended" big number on
+       the dashboard. GSAP increments via {textContent: <num>, snap:1} */
+.counter {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ---- Skeleton shimmer for evidence-loading state ----------------------- */
+.skeleton {
+  background: linear-gradient(
+    100deg,
+    var(--paper-deep) 30%,
+    rgba(168, 132, 44, 0.08) 50%,
+    var(--paper-deep) 70%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1400ms linear infinite;
+  border-radius: 0;
+  display: block;
+}
+.skeleton-row {
+  height: 12px;
+  margin-bottom: 8px;
+}
+.skeleton-row.tall { height: 18px; }
+.skeleton-row.short { width: 60%; }
+.skeleton-image {
+  height: 220px;
+  width: 100%;
+  margin: 8px 0;
+}
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ---- Toast (HTMX out-of-band) — slides up from bottom-right, dismisses
+       after 4s. Stack vertically when multiple. ------------------------- */
+#toast-rail {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 10px 16px;
+  font-family: 'Spectral', serif;
+  font-size: var(--fs-sm);
+  border-left: 3px solid var(--pass);
+  max-width: 360px;
+  box-shadow: 0 6px 22px rgba(28, 26, 23, 0.32);
+  transform: translateX(420px);
+  opacity: 0;
+  transition: transform 320ms cubic-bezier(0.32, 0.72, 0, 1),
+              opacity 220ms ease-out;
+}
+.toast.is-shown { transform: translateX(0); opacity: 1; }
+.toast.is-error { border-left-color: var(--fail); }
+
+/* (Cmd-K hint removed from masthead — see commit history. The Ninja
+   Keys palette still binds to Ctrl+K / Cmd+K but is no longer
+   advertised, since the audience is procurement officers, not power
+   users of dev-tool palettes.) */
+
+/* ---- Reduced-motion override (accessibility, gov compliance) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .verdict-stamp.is-impressed { animation: none; opacity: 1; transform: rotate(-4deg) scale(1); }
+  .audit-pill.is-pulsing::after { display: none; }
+  .skeleton { animation: none; background: var(--paper-deep); }
+}

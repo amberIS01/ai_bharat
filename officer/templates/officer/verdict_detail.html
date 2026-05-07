@@ -1,0 +1,332 @@
+{% extends "officer/base.html" %}
+{% block title %}Verdict {{ verdict.id }} · {{ verdict.criterion.code }} × Bidder {{ verdict.bidder_code }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .evidence-frame {
+    position: relative;
+    display: inline-block;
+    border: 1px solid var(--rule-strong);
+    background: white;
+    box-shadow: 0 1px 0 rgba(28, 26, 23, 0.08);
+    margin: 8px 0;
+  }
+  .evidence-frame img { display: block; max-width: 720px; height: auto; }
+  .evidence-frame .bbox {
+    position: absolute;
+    border: 2px solid var(--pass);
+    background: rgba(168, 132, 44, 0.18);
+    pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(168, 132, 44, 0.25);
+  }
+  .evidence-frame .bbox.low-conf {
+    border-color: var(--fail);
+    background: rgba(122, 30, 30, 0.18);
+    box-shadow: 0 0 0 1px rgba(122, 30, 30, 0.3);
+  }
+  .evidence-card {
+    border: 1px solid var(--rule-strong);
+    background: var(--paper);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .evidence-card.low-conf {
+    border-color: var(--fail);
+    background: var(--fail-bg);
+  }
+  .verdict-stamp {
+    width: 124px; height: 124px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: 3px solid currentColor;
+    border-radius: 50%;
+    position: relative;
+    font-family: 'Spectral', serif;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    transform: rotate(-4deg);
+  }
+  .verdict-stamp::before {
+    content: "";
+    position: absolute; inset: 6px;
+    border: 1px dashed currentColor;
+    border-radius: 50%;
+    opacity: 0.7;
+  }
+  .verdict-stamp.is-pass    { color: var(--pass); }
+  .verdict-stamp.is-fail    { color: var(--fail); }
+  .verdict-stamp.is-abstain { color: var(--abstain); }
+  .verdict-stamp .label-line-1 { font-size: 22px; line-height: 1; margin-bottom: 4px; }
+  .verdict-stamp .label-line-2 { font-size: 8px; letter-spacing: 0.2em; opacity: 0.8; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="crumb"><a href="{% url 'officer:eval_grid' verdict.criterion.rfp_id %}">← Verdict register</a></div>
+
+<div class="title-block" style="align-items:flex-start">
+  <div style="display:flex;gap:24px;align-items:center">
+    <div class="verdict-stamp is-{{ effective_status|lower }}">
+      <div>
+        <div class="label-line-1">{{ effective_status }}</div>
+        <div class="label-line-2">{{ verdict.criterion.code }} · {{ verdict.bidder_code }}</div>
+      </div>
+    </div>
+    <div>
+      <h1 style="margin-bottom:4px">{{ verdict.criterion.code }} · Bidder {{ verdict.bidder_code }}</h1>
+      <div class="subtitle">{{ verdict.criterion.title }}</div>
+      {% if is_overridden %}
+      <div class="row" style="gap:8px;margin-top:10px;align-items:center">
+        <span class="pill is-{{ verdict.status|lower }}" style="opacity:0.6;text-decoration:line-through">{{ verdict.status }}</span>
+        <span class="muted" style="font-size:var(--fs-xs);font-style:italic">overridden by {{ effective_override.officer|default:"—" }} on {{ effective_override.ts|date:"Y-m-d H:i" }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<section style="display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:start">
+
+  <div class="stack stack-loose">
+
+    {% if not has_rule_id %}
+    <div class="frame alert">
+      <strong>Rule identifier missing.</strong> The Rego rule that produced this verdict did not return a <code class="mono">rule_id</code>. Override required before sign-off.
+    </div>
+    {% endif %}
+
+    <div class="frame frame-titled">
+      <div class="frame-title">Verdict reasoning</div>
+      <dl class="kv">
+        <dt>Rule ID</dt>
+        <dd><code class="mono">{{ verdict.rule_id|default:"(empty)" }}</code></dd>
+        <dt>Reason</dt>
+        <dd style="font-family:'Source Serif 4',serif;font-size:var(--fs-md);line-height:1.55">{{ verdict.reason }}</dd>
+        <dt>Bindings</dt>
+        <dd>
+          {% if verdict.bindings_json %}
+          <pre class="mono" style="background:var(--paper-deep);border:var(--rule-line);padding:10px 12px;font-size:11px;line-height:1.6;white-space:pre-wrap;margin:0">{{ verdict.bindings_json }}</pre>
+          {% else %}<em class="muted">none</em>{% endif %}
+        </dd>
+      </dl>
+    </div>
+
+    <div>
+      <div class="eyebrow" style="margin-bottom:10px">Evidence · cited blocks</div>
+      <div id="evidence-cards">
+        <div class="evidence-card">
+          <div class="skeleton skeleton-row tall" style="width:50%;margin-bottom:10px"></div>
+          <div class="skeleton skeleton-row" style="width:90%"></div>
+          <div class="skeleton skeleton-row short"></div>
+          <div class="skeleton skeleton-image"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <aside class="stack stack-loose">
+
+    <div class="frame frame-titled">
+      <div class="frame-title">Extracted fact</div>
+      {% if fact %}
+        <div class="mono" style="font-size:var(--fs-md);word-break:break-word;color:var(--ink);font-weight:500">{{ fact.value|default:"(absent)" }}</div>
+        <div class="muted" style="font-size:var(--fs-xs);margin-top:6px">aggregated confidence · <strong style="color:var(--ink);font-family:'Spectral',serif;font-style:normal;font-weight:600">{{ fact.ocr_confidence|floatformat:2 }}</strong></div>
+      {% else %}
+        <em class="muted">No Fact row.</em>
+      {% endif %}
+    </div>
+
+    <div class="frame frame-titled">
+      <div class="frame-title">Override · file</div>
+      <form method="post" action="{% url 'officer:verdict_override' verdict.id %}" class="stack stack-tight">
+        {% csrf_token %}
+        {% for field in form %}
+          <div>
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+            {% for err in field.errors %}<p class="help" style="color:var(--fail)">{{ err }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+        <button class="btn btn-primary" type="submit">Submit override</button>
+      </form>
+    </div>
+
+    <div class="frame frame-titled">
+      <div class="frame-title">Override · history</div>
+      {% if overrides %}
+        <ul style="list-style:none;padding:0;margin:0">
+          {% for o in overrides %}
+          <li style="border-bottom:var(--rule-line);padding:8px 0">
+            <strong style="font-family:'Spectral',serif;font-weight:600">{{ o.requested_status }}</strong>
+            <span class="muted" style="font-size:var(--fs-xs)">({{ o.status }})</span><br>
+            <span class="muted" style="font-size:var(--fs-xs)">{{ o.officer }} · {{ o.ts|date:"Y-m-d H:i" }}</span>
+            <p style="margin:4px 0 0;font-size:var(--fs-sm);font-style:italic;color:var(--ink-soft)">{{ o.reason }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}<em class="muted">No overrides filed.</em>{% endif %}
+    </div>
+
+  </aside>
+
+</section>
+
+<script>
+(function () {
+  // Strict no-innerHTML policy below: every dynamic value goes through
+  // textContent or is set via Element.style.* / Element.setAttribute, so
+  // an attacker-controlled Block.text or document_type cannot inject
+  // markup even if the upstream fields were bypassed.
+  const evidenceUrl = "{% url 'officer:verdict_evidence_json' verdict.id %}";
+  const container = document.getElementById("evidence-cards");
+
+  fetch(evidenceUrl, { credentials: "same-origin" })
+    .then(r => r.json())
+    .then(payload => render(payload))
+    .catch(err => {
+      while (container.firstChild) container.removeChild(container.firstChild);
+      const msg = document.createElement("div");
+      msg.className = "frame alert";
+      msg.textContent = "Failed to load evidence: " + err;
+      container.appendChild(msg);
+    });
+
+  function el(tag, opts = {}) {
+    const e = document.createElement(tag);
+    if (opts.cls) e.className = opts.cls;
+    if (opts.text != null) e.textContent = String(opts.text);
+    if (opts.style) Object.assign(e.style, opts.style);
+    if (opts.attrs) {
+      for (const [k, v] of Object.entries(opts.attrs)) {
+        e.setAttribute(k, String(v));
+      }
+    }
+    return e;
+  }
+
+  function render(payload) {
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    const warnings = payload.citation_warnings || [];
+    if (warnings.length) {
+      const warn = el("div", { cls: "frame warn" });
+      warn.appendChild(el("strong", { text: warnings.length + " citation(s) could not be rendered." }));
+      const ul = el("ul", { style: { margin: "6px 0 0", paddingLeft: "20px" } });
+      warnings.forEach(w => ul.appendChild(el("li", { text: String(w), style: { fontSize: "13px" } })));
+      warn.appendChild(ul);
+      container.appendChild(warn);
+    }
+
+    const cites = payload.citations || [];
+    if (!cites.length) {
+      const empty = el("div", {
+        cls: "frame note",
+        text: "No bbox-cited evidence blocks linked to this verdict.",
+      });
+      container.appendChild(empty);
+      return;
+    }
+    const created = cites.map(c => {
+      const card = citationCard(c);
+      container.appendChild(card);
+      return card;
+    });
+    // GSAP stagger fade-up for cards. CSS-fallback if GSAP isn't loaded.
+    if (window.gsap) {
+      gsap.from(created, { y: 14, opacity: 0, duration: 0.4, stagger: 0.07, ease: "power3.out" });
+    }
+  }
+
+  function citationCard(c) {
+    const naturalW = Number(c.image_width_px) || 1;
+    const naturalH = Number(c.image_height_px) || 1;
+    const displayW = Math.min(720, naturalW);
+    const scale = displayW / naturalW;
+
+    const bb = c.bbox_pixels || {};
+    const left = (Number(bb.left || 0) * scale).toFixed(1);
+    const top = (Number(bb.top || 0) * scale).toFixed(1);
+    const width = (Number(bb.width || 0) * scale).toFixed(1);
+    const height = (Number(bb.height || 0) * scale).toFixed(1);
+
+    const lowConf = Boolean(c.is_low_confidence);
+    const card = el("div", {
+      cls: "evidence-card" + (lowConf ? " low-conf" : ""),
+    });
+
+    // Header row
+    const header = el("div", {
+      style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px", gap: "8px" },
+    });
+    const headLeft = el("div", { style: { display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" } });
+    headLeft.appendChild(el("strong", {
+      text: c.document_type || "",
+      style: { fontFamily: "'Spectral', serif", fontWeight: "600", fontSize: "13px", letterSpacing: "0.04em", textTransform: "uppercase" },
+    }));
+    headLeft.appendChild(el("span", { text: "page " + Number(c.page_no || 0), cls: "muted", style: { fontSize: "12px", fontStyle: "italic" } }));
+    const sourceBadge = el("span", {
+      cls: "pill",
+      text: c.source === "GEMINI_VISION" ? "Gemini Vision" : "Docling",
+      style: { fontStyle: "normal", color: c.source === "GEMINI_VISION" ? "var(--fail)" : "var(--abstain)" },
+    });
+    headLeft.appendChild(sourceBadge);
+    header.appendChild(headLeft);
+
+    const headRight = el("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" } });
+    headRight.appendChild(el("span", { cls: "mono", text: "block " + Number(c.block_id || 0), style: { fontSize: "10px", color: "var(--sepia)" } }));
+    headRight.appendChild(el("strong", {
+      text: "conf " + Number(c.confidence || 0).toFixed(2),
+      style: { fontFamily: "'Spectral', serif", fontVariantNumeric: "tabular-nums", color: lowConf ? "var(--fail)" : "var(--ink)" },
+    }));
+    header.appendChild(headRight);
+    card.appendChild(header);
+
+    // Text snippet — italic Spectral, like a quoted clause
+    card.appendChild(el("p", {
+      text: String(c.text || "").slice(0, 240),
+      style: { fontFamily: "'Spectral', serif", fontStyle: "italic", fontSize: "13px", color: "var(--ink-soft)", margin: "0 0 10px 0", lineHeight: "1.55", borderLeft: "2px solid var(--rule-strong)", paddingLeft: "12px" },
+    }));
+
+    if (c.reason_if_low && String(c.reason_if_low).trim()) {
+      card.appendChild(el("p", {
+        text: "OCR uncertainty · " + String(c.reason_if_low).trim(),
+        style: { color: "var(--fail)", fontFamily: "'Spectral', serif", fontStyle: "italic", fontSize: "12px", margin: "0 0 10px 0" },
+      }));
+    }
+
+    // Frame: image + bbox overlay
+    const frame = el("div", {
+      cls: "evidence-frame",
+      style: { width: displayW + "px" },
+    });
+    const img = el("img", {
+      attrs: {
+        src: c.page_image_url,
+        alt: "page " + Number(c.page_no || 0),
+        loading: "lazy",
+      },
+    });
+    frame.appendChild(img);
+    const overlay = el("div", {
+      cls: "bbox" + (lowConf ? " low-conf" : ""),
+      style: {
+        left: left + "px",
+        top: top + "px",
+        width: width + "px",
+        height: height + "px",
+      },
+    });
+    frame.appendChild(overlay);
+    card.appendChild(frame);
+
+    return card;
+  }
+})();
+</script>
+{% endblock %}

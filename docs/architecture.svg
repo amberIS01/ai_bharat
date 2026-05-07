@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 720" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#0f172a"/>
+    </marker>
+    <marker id="arrow-grey" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="550" y="30" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Praman — System Architecture</text>
+  <text x="550" y="52" text-anchor="middle" font-size="13" fill="#475569">Theme 3 · CRPF Tender Evaluation · AI for Bharat 2026</text>
+
+  <!-- Lane labels -->
+  <g font-size="11" font-weight="700" fill="#1e40af" text-anchor="start">
+    <text x="40" y="100">1 · INGEST</text>
+    <text x="40" y="220">2 · EXTRACT</text>
+    <text x="40" y="340">3 · EVALUATE (LLM never decides)</text>
+    <text x="40" y="460">4 · AUDIT &amp; SIGN</text>
+    <text x="40" y="580">5 · OFFICER UI</text>
+  </g>
+
+  <!-- Lane backgrounds -->
+  <rect x="35" y="80" width="1030" height="100" fill="#f1f5f9" rx="6"/>
+  <rect x="35" y="200" width="1030" height="100" fill="#f1f5f9" rx="6"/>
+  <rect x="35" y="320" width="1030" height="100" fill="#f1f5f9" rx="6"/>
+  <rect x="35" y="440" width="1030" height="100" fill="#f1f5f9" rx="6"/>
+  <rect x="35" y="560" width="1030" height="100" fill="#f1f5f9" rx="6"/>
+
+  <!-- ===== Lane 1: INGEST ===== -->
+  <g font-size="12" fill="#0f172a">
+    <!-- Officer uploads -->
+    <rect x="60" y="115" width="110" height="48" fill="white" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="115" y="135" text-anchor="middle" font-weight="700">Officer</text>
+    <text x="115" y="151" text-anchor="middle" font-size="10">uploads PDF</text>
+
+    <!-- Docling -->
+    <rect x="240" y="105" width="140" height="68" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="310" y="125" text-anchor="middle" font-weight="700">Docling v2</text>
+    <text x="310" y="143" text-anchor="middle" font-size="10">digital PDFs · CPU</text>
+    <text x="310" y="158" text-anchor="middle" font-size="10">bbox + page no.</text>
+    <text x="310" y="170" text-anchor="middle" font-size="10" fill="#475569">(BOTTOMLEFT origin)</text>
+
+    <text x="190" y="138" text-anchor="middle" font-size="14" fill="#0f172a">→</text>
+
+    <!-- Decision diamond -->
+    <text x="395" y="143" text-anchor="middle" font-size="14">→</text>
+    <polygon points="445,140 485,118 525,140 485,162" fill="#fef3c7" stroke="#92400e" stroke-width="1.5"/>
+    <text x="485" y="138" text-anchor="middle" font-size="9" font-weight="700">&lt; 5 blocks</text>
+    <text x="485" y="150" text-anchor="middle" font-size="9" font-weight="700">per page?</text>
+
+    <!-- Gemini Vision (fallback) -->
+    <text x="540" y="143" text-anchor="middle" font-size="14">→</text>
+    <rect x="565" y="105" width="170" height="68" fill="#fef3c7" stroke="#92400e" stroke-width="1.5" rx="4"/>
+    <text x="650" y="125" text-anchor="middle" font-weight="700">Gemini 2.5 Vision</text>
+    <text x="650" y="143" text-anchor="middle" font-size="10">scanned / photo OCR</text>
+    <text x="650" y="158" text-anchor="middle" font-size="10">bbox 0–1000 norm.</text>
+    <text x="650" y="170" text-anchor="middle" font-size="10" fill="#475569">+ self-elicited conf.</text>
+
+    <!-- Block table -->
+    <text x="755" y="143" text-anchor="middle" font-size="14">→</text>
+    <rect x="785" y="105" width="170" height="68" fill="white" stroke="#0f172a" stroke-width="1.5" rx="4"/>
+    <text x="870" y="125" text-anchor="middle" font-weight="700">Block rows</text>
+    <text x="870" y="143" text-anchor="middle" font-size="10">SQLite · per-block</text>
+    <text x="870" y="158" text-anchor="middle" font-size="10">bbox · text · conf.</text>
+    <text x="870" y="170" text-anchor="middle" font-size="10" fill="#475569">source: docling | gemini</text>
+  </g>
+
+  <!-- ===== Lane 2: EXTRACT ===== -->
+  <g font-size="12" fill="#0f172a">
+    <rect x="60" y="225" width="160" height="60" fill="white" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="140" y="245" text-anchor="middle" font-weight="700">Block manifest</text>
+    <text x="140" y="263" text-anchor="middle" font-size="10">page+bbox+text snippets</text>
+    <text x="140" y="277" text-anchor="middle" font-size="10" fill="#475569">+ raster page images</text>
+
+    <text x="240" y="258" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="265" y="225" width="180" height="60" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="355" y="245" text-anchor="middle" font-weight="700">Gemini 2.5 Pro</text>
+    <text x="355" y="263" text-anchor="middle" font-size="10">extract criteria · 1-shot</text>
+    <text x="355" y="277" text-anchor="middle" font-size="10" fill="#475569">response_schema = Pydantic</text>
+
+    <text x="465" y="258" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="490" y="225" width="180" height="60" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="580" y="245" text-anchor="middle" font-weight="700">Gemini 2.5 Flash</text>
+    <text x="580" y="263" text-anchor="middle" font-size="10">extract facts (per bidder)</text>
+    <text x="580" y="277" text-anchor="middle" font-size="10" fill="#475569">cited block IDs + value</text>
+
+    <text x="690" y="258" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="715" y="225" width="240" height="60" fill="white" stroke="#0f172a" stroke-width="1.5" rx="4"/>
+    <text x="835" y="245" text-anchor="middle" font-weight="700">Criterion + Fact rows</text>
+    <text x="835" y="263" text-anchor="middle" font-size="10">requirement_text · code · type</text>
+    <text x="835" y="277" text-anchor="middle" font-size="10" fill="#475569">value · evidence_blocks M2M</text>
+
+    <!-- Cache hint -->
+    <rect x="980" y="225" width="80" height="60" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1" rx="4" stroke-dasharray="3,2"/>
+    <text x="1020" y="245" text-anchor="middle" font-size="10" font-weight="700">Cache</text>
+    <text x="1020" y="260" text-anchor="middle" font-size="9">SHA-256 of</text>
+    <text x="1020" y="272" text-anchor="middle" font-size="9">prompt + image</text>
+  </g>
+
+  <!-- ===== Lane 3: EVALUATE ===== -->
+  <g font-size="12" fill="#0f172a">
+    <rect x="60" y="345" width="160" height="60" fill="white" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="140" y="365" text-anchor="middle" font-weight="700">parsers.py</text>
+    <text x="140" y="381" text-anchor="middle" font-size="10">parse_inr · parse_gstin</text>
+    <text x="140" y="395" text-anchor="middle" font-size="10">title-based dispatch</text>
+
+    <text x="240" y="378" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="265" y="345" width="180" height="60" fill="#fee2e2" stroke="#b91c1c" stroke-width="1.5" rx="4"/>
+    <text x="355" y="365" text-anchor="middle" font-weight="700">OPA + Rego rules</text>
+    <text x="355" y="381" text-anchor="middle" font-size="10">one .rego per criterion</text>
+    <text x="355" y="395" text-anchor="middle" font-size="10" fill="#475569">PASS / FAIL / ABSTAIN</text>
+
+    <text x="465" y="378" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="490" y="345" width="200" height="60" fill="white" stroke="#0f172a" stroke-width="1.5" rx="4"/>
+    <text x="590" y="365" text-anchor="middle" font-weight="700">Verdict rows</text>
+    <text x="590" y="381" text-anchor="middle" font-size="10">rule_id + bindings + reason</text>
+    <text x="590" y="395" text-anchor="middle" font-size="10" fill="#475569">evidence_refs (Block M2M)</text>
+
+    <!-- Threshold callout -->
+    <rect x="710" y="335" width="345" height="80" fill="#fffbeb" stroke="#a16207" stroke-width="1" rx="4"/>
+    <text x="725" y="354" font-size="10" font-weight="700" fill="#854d0e">Confidence floor → ABSTAIN, never silently FAIL</text>
+    <text x="725" y="370" font-size="10" fill="#854d0e">If Fact.ocr_confidence &lt; 0.85 → rule emits ABSTAIN</text>
+    <text x="725" y="386" font-size="10" fill="#854d0e">If no Rego rule mapped → ABSTAIN no_rule_mapped</text>
+    <text x="725" y="402" font-size="10" fill="#854d0e">Officer reviews every ABSTAIN; LLM never decides.</text>
+  </g>
+
+  <!-- ===== Lane 4: AUDIT & SIGN ===== -->
+  <g font-size="12" fill="#0f172a">
+    <rect x="60" y="465" width="180" height="60" fill="white" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="150" y="485" text-anchor="middle" font-weight="700">Django signals</text>
+    <text x="150" y="501" text-anchor="middle" font-size="10">post_save → audit append</text>
+    <text x="150" y="515" text-anchor="middle" font-size="10" fill="#475569">on_commit for M2M state</text>
+
+    <text x="260" y="498" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="285" y="465" width="200" height="60" fill="#dbeafe" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="385" y="485" text-anchor="middle" font-weight="700">Merkle chain</text>
+    <text x="385" y="501" text-anchor="middle" font-size="10">SHA-256 of canonical JSON</text>
+    <text x="385" y="515" text-anchor="middle" font-size="10" fill="#475569">RFC 8785 · 9162-style</text>
+
+    <text x="505" y="498" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="530" y="465" width="180" height="60" fill="white" stroke="#0f172a" stroke-width="1.5" rx="4"/>
+    <text x="620" y="485" text-anchor="middle" font-weight="700">AuditEntry rows</text>
+    <text x="620" y="501" text-anchor="middle" font-size="10">append-only · seq + hash</text>
+    <text x="620" y="515" text-anchor="middle" font-size="10" fill="#475569">verify_chain() at render time</text>
+
+    <text x="730" y="498" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="755" y="465" width="180" height="60" fill="#dcfce7" stroke="#15803d" stroke-width="1.5" rx="4"/>
+    <text x="845" y="485" text-anchor="middle" font-weight="700">Signed PDF</text>
+    <text x="845" y="501" text-anchor="middle" font-size="10">pyHanko · PAdES-B</text>
+    <text x="845" y="515" text-anchor="middle" font-size="10" fill="#475569">embeds head hash</text>
+
+    <text x="955" y="498" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="975" y="465" width="80" height="60" fill="white" stroke="#1e40af" stroke-width="1" rx="4"/>
+    <text x="1015" y="485" text-anchor="middle" font-size="10" font-weight="700">CAG /</text>
+    <text x="1015" y="500" text-anchor="middle" font-size="10" font-weight="700">CVC review</text>
+    <text x="1015" y="515" text-anchor="middle" font-size="9" fill="#475569">replayable</text>
+  </g>
+
+  <!-- ===== Lane 5: OFFICER UI ===== -->
+  <g font-size="12" fill="#0f172a">
+    <text x="80" y="585" font-size="11" font-weight="700" fill="#475569">Django views + HTMX + AG-Grid + image overlay</text>
+    <rect x="60" y="595" width="180" height="60" fill="white" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="150" y="615" text-anchor="middle" font-weight="700">Upload</text>
+    <text x="150" y="630" text-anchor="middle" font-size="10">RFP + bidder bundles</text>
+    <text x="150" y="644" text-anchor="middle" font-size="10" fill="#475569">SHA-256 dedup</text>
+
+    <text x="260" y="628" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="285" y="595" width="180" height="60" fill="white" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="375" y="615" text-anchor="middle" font-weight="700">Criteria review</text>
+    <text x="375" y="630" text-anchor="middle" font-size="10">cited clause · HTMX edit</text>
+    <text x="375" y="644" text-anchor="middle" font-size="10" fill="#475569">mandatory toggle audited</text>
+
+    <text x="485" y="628" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="510" y="595" width="180" height="60" fill="white" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="600" y="615" text-anchor="middle" font-weight="700">Eval grid</text>
+    <text x="600" y="630" text-anchor="middle" font-size="10">AG-Grid · bidder × criterion</text>
+    <text x="600" y="644" text-anchor="middle" font-size="10" fill="#475569">click cell → drilldown</text>
+
+    <text x="710" y="628" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="735" y="595" width="180" height="60" fill="white" stroke="#1e40af" stroke-width="1.5" rx="4"/>
+    <text x="825" y="615" text-anchor="middle" font-weight="700">Drilldown</text>
+    <text x="825" y="630" text-anchor="middle" font-size="10">page PNG + bbox overlay</text>
+    <text x="825" y="644" text-anchor="middle" font-size="10" fill="#475569">low-conf reason shown</text>
+
+    <text x="935" y="628" text-anchor="middle" font-size="14">→</text>
+
+    <rect x="960" y="595" width="100" height="60" fill="#dcfce7" stroke="#15803d" stroke-width="1.5" rx="4"/>
+    <text x="1010" y="615" text-anchor="middle" font-weight="700">Sign-off</text>
+    <text x="1010" y="630" text-anchor="middle" font-size="10">PDF history</text>
+    <text x="1010" y="644" text-anchor="middle" font-size="10" fill="#475569">+ chain status</text>
+  </g>
+
+  <!-- Production roadmap sidebar -->
+  <g>
+    <rect x="35" y="675" width="1030" height="38" fill="#f8fafc" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,2" rx="4"/>
+    <text x="50" y="691" font-size="10" font-weight="700" fill="#64748b">Production roadmap (post-hackathon, greyed):</text>
+    <text x="50" y="706" font-size="10" fill="#64748b">
+      Local Qwen2.5-VL via vLLM (replaces Gemini, air-gapped) · Trillian / immudb (replaces SQLite Merkle) · CCA Class-3 DSC via PKCS#11 (replaces self-signed cert) · ColPali fallback retrieval
+    </text>
+  </g>
+</svg>

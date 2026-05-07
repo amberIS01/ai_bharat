@@ -1,0 +1,11 @@
+{% comment %}
+  Audit-chain status pill rendered into the masthead. HTMX swaps this
+  every 60s. The pill stays compact and monospace so it reads like a
+  ledger badge, not a notification toast.
+{% endcomment %}
+<span id="audit-pill" class="audit-pill{% if not verified %} is-broken{% endif %}"
+      hx-get="{% url 'officer:audit_status' %}"
+      hx-trigger="every 60s"
+      hx-swap="outerHTML">
+  {% if verified %}chain · {{ count }} sealed{% else %}chain broken · {{ problems|length }} fault{{ problems|length|pluralize }}{% endif %}
+</span>

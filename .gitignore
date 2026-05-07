@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+local_settings.py
+staticfiles/
+media/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Signing certificates (NEVER commit)
+*.p12
+*.pfx
+*.pem
+*.key
+deploy/demo_signer.*
+
+# Synthetic + reference data (generated, large, or potentially sensitive)
+synthetic/
+private/
+real-data/
+reference_tenders/
+
+# Augraphy distortion pipeline cache
+augraphy_cache/
+
+# Model weights / caches (HuggingFace, Docling, PaddleOCR)
+model_weights/
+.cache/
+~/.cache/huggingface/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (if any frontend tooling appears later)
+node_modules/
+
+# Jupyter
+.ipynb_checkpoints/

@@ -1,0 +1,68 @@
+{% extends "officer/base.html" %}
+{% block title %}Criteria · {{ rfp.original_filename }}{% endblock %}
+{% block content %}
+
+<div class="crumb"><a href="{% url 'officer:dashboard' %}">Dashboard</a> · Tender № {{ rfp.id }} · Criteria</div>
+
+<div class="title-block">
+  <div>
+    <h1>Eligibility criteria</h1>
+    <div class="subtitle">{{ rfp.original_filename }} · extracted {{ criteria|length }} clauses · {% if bidder_codes %}bidders {{ bidder_codes|join:", " }}{% else %}<em>no bidders ingested yet</em>{% endif %}</div>
+  </div>
+  <div class="actions">
+    <form method="post" action="{% url 'officer:run_extraction' rfp.id %}" style="display:inline">{% csrf_token %}
+      <button type="submit" class="btn btn-ghost btn-sm">Re-extract</button>
+    </form>
+    <a href="{% url 'officer:eval_grid' rfp.id %}" class="btn btn-primary btn-sm">Verdict grid →</a>
+  </div>
+</div>
+
+{% if criteria %}
+
+<div class="frame note" style="margin-bottom:24px">
+  <strong style="font-style:normal;color:var(--ink)">How to read this register:</strong>
+  Each criterion is a single eligibility clause Gemini extracted from the RFP, with the original page+bbox citation preserved. Click the
+  <span class="pill" style="font-style:normal">●&nbsp;MANDATORY</span> /
+  <span class="pill" style="font-style:normal">●&nbsp;OPTIONAL</span> pill to toggle status — every toggle is appended to the Merkle audit chain.
+  Type and code are <em>not</em> editable here; type drives Rego dispatch, code is the unique identifier.
+</div>
+
+{% with mandatory_list=criteria|dictsort:"mandatory" %}
+{# We render them in two passes: mandatory first, then optional. #}
+<section style="display:grid;grid-template-columns:1fr;gap:32px">
+
+  <div>
+    <div class="eyebrow" style="margin-bottom:10px;display:flex;align-items:center;gap:10px">
+      <span style="display:inline-block;width:24px;height:1px;background:var(--fail)"></span>
+      Mandatory clauses · disqualification on failure
+    </div>
+    <div class="stack stack-tight">
+      {% for c in criteria %}{% if c.mandatory %}{% include "officer/_partials/criterion_row.html" %}{% endif %}{% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <div class="eyebrow" style="margin-bottom:10px;display:flex;align-items:center;gap:10px">
+      <span style="display:inline-block;width:24px;height:1px;background:var(--sepia)"></span>
+      Optional clauses · preferred, not required
+    </div>
+    {% with has_optional=False %}
+    <div class="stack stack-tight">
+      {% for c in criteria %}{% if not c.mandatory %}{% include "officer/_partials/criterion_row.html" %}{% endif %}{% endfor %}
+      {% with has_optional_check=criteria|dictsort:"mandatory" %}{% endwith %}
+    </div>
+    {% endwith %}
+  </div>
+
+</section>
+{% endwith %}
+
+{% else %}
+
+<div class="frame note">
+  No criteria extracted yet. Click <em>Re-extract</em> above to run Gemini 2.5 Pro on the RFP.
+</div>
+
+{% endif %}
+
+{% endblock %}

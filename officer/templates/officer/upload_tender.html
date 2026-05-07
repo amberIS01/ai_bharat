@@ -1,0 +1,51 @@
+{% extends "officer/base.html" %}
+{% block title %}Enter tender · प्रमाण{% endblock %}
+{% block content %}
+
+<div class="crumb"><a href="{% url 'officer:dashboard' %}">Dashboard</a> · Enter new tender</div>
+
+<div class="title-block">
+  <div>
+    <h1>Enter a tender into the register</h1>
+    <div class="subtitle">The PDF will be parsed via Docling; scanned regions fall back to Gemini Vision OCR.</div>
+  </div>
+</div>
+
+<section style="display:grid;grid-template-columns:1fr 320px;gap:36px;align-items:start">
+
+  <form method="post" enctype="multipart/form-data" class="frame frame-titled" style="border-top:2px solid var(--ink);padding:28px 32px">
+    <div class="frame-title">RFP · upload</div>
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="stack stack-tight" style="margin-bottom:18px">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+        {% for err in field.errors %}<p class="help" style="color:var(--fail)">{{ err }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    <div class="row between" style="margin-top:24px">
+      <button type="submit" class="btn btn-primary">Upload &amp; ingest</button>
+      <span class="muted" style="font-size:var(--fs-xs);font-style:italic">SHA-256 deduplicated · auditable from byte 0</span>
+    </div>
+  </form>
+
+  <aside class="stack stack-loose">
+    <div class="frame frame-titled">
+      <div class="frame-title">What happens next</div>
+      <ol class="mono" style="padding-left:20px;font-size:var(--fs-sm);line-height:1.8;color:var(--ink-soft);margin:6px 0 0">
+        <li>SHA-256 fingerprint registered</li>
+        <li>Docling parses digital text</li>
+        <li>Gemini Vision OCR fills scanned regions</li>
+        <li>Block citations stored with bbox</li>
+        <li>One audit-chain entry appended</li>
+      </ol>
+    </div>
+    <div class="frame note" style="font-family:'Spectral',serif">
+      The LLM extracts. Rego decides. Every step writes to a Merkle-chained audit log that an officer can replay later.
+    </div>
+  </aside>
+
+</section>
+
+{% endblock %}

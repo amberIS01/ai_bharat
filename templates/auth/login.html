@@ -1,0 +1,48 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in · प्रमाण</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'vendor/tailwind.built.css' %}">
+<link rel="stylesheet" href="{% static 'praman.css' %}">
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px">
+
+<div class="frame frame-titled" style="border-top:2px solid var(--ink);padding:32px 36px;width:100%;max-width:420px;background:var(--paper);box-shadow:0 1px 0 rgba(28,26,23,0.06), 0 0 0 1px var(--rule);">
+  <div class="frame-title">Sign in</div>
+
+  <div style="text-align:center;margin:6px 0 22px">
+    <div style="display:inline-flex;align-items:baseline;gap:10px">
+      <span class="deva" style="font-family:'Tiro Devanagari Hindi',serif;font-size:1.8rem;line-height:1">प्रमाण</span>
+      <span style="font-family:'Spectral',serif;font-weight:600;font-size:1.1rem;letter-spacing:0.04em;text-transform:uppercase;border-left:1px solid var(--rule-strong);padding-left:10px">Praman</span>
+    </div>
+    <div class="eyebrow muted" style="margin-top:8px">Evidence-grade tender evaluation · demo build</div>
+  </div>
+
+  {% if form.errors %}
+  <div class="message is-error" style="margin-bottom:14px">
+    Username or password is incorrect.
+  </div>
+  {% endif %}
+
+  <form method="post" class="stack stack-tight">
+    {% csrf_token %}
+    <div>
+      <label>Username</label>
+      <input type="text" name="username" autofocus required autocomplete="username">
+    </div>
+    <div>
+      <label>Password</label>
+      <input type="password" name="password" required autocomplete="current-password">
+    </div>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center;margin-top:8px">Sign in</button>
+  </form>
+</div>
+
+</body>
+</html>

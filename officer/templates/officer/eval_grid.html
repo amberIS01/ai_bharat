@@ -1,0 +1,234 @@
+{% extends "officer/base.html" %}
+{% load static %}
+{% block title %}Verdicts · {{ rfp.original_filename }}{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'vendor/ag-grid-community.min.js' %}"></script>
+<style>
+  .grid-status-cell { cursor: pointer; }
+  .praman-grid-shell {
+    border: 1px solid var(--rule-strong);
+    border-top: 2px solid var(--ink);
+    background: var(--paper);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="crumb"><a href="{% url 'officer:dashboard' %}">Dashboard</a> · Tender № {{ rfp.id }} · Verdicts</div>
+
+<div class="title-block">
+  <div>
+    <h1>Verdict register · bidder × criterion</h1>
+    <div class="subtitle">{{ rfp.original_filename }} · {{ bidder_codes|length }} bidders × {{ criteria|length }} criteria · LLM extracts, Rego decides</div>
+  </div>
+  <div class="actions">
+    <a href="{% url 'officer:criteria_review' rfp.id %}" class="btn btn-ghost btn-sm">Criteria</a>
+    <form method="post" action="{% url 'officer:run_evaluation' rfp.id %}" style="display:inline">{% csrf_token %}
+      <button type="submit" class="btn btn-seal btn-sm">Run evaluation</button>
+    </form>
+  </div>
+</div>
+
+{% if not opa_ok %}
+<div class="frame alert" style="margin-bottom:18px">
+  <strong>Policy engine offline.</strong> Run evaluation will not function until OPA is reachable.
+  <code class="mono" style="display:block;margin-top:6px">deploy/bin/opa run --server --addr 127.0.0.1:8181 --log-level error deploy/rules/</code>
+</div>
+{% endif %}
+
+{% if verdicts_stale %}
+<div class="frame warn" style="margin-bottom:18px">
+  <strong>Verdicts are stale.</strong> A criterion was edited after the most recent evaluation. The grid below shows the prior verdicts; click <em>Run evaluation</em> to refresh.
+</div>
+{% endif %}
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;gap:18px;flex-wrap:wrap">
+  <div class="row" style="gap:14px;flex-wrap:wrap">
+    <span class="row" style="gap:6px"><span class="ag-cell-pill PASS">PASS</span><span class="muted" style="font-size:var(--fs-xs)">meets the criterion</span></span>
+    <span class="row" style="gap:6px"><span class="ag-cell-pill FAIL">FAIL</span><span class="muted" style="font-size:var(--fs-xs)">below threshold</span></span>
+    <span class="row" style="gap:6px"><span class="ag-cell-pill ABSTAIN">ABSTAIN</span><span class="muted" style="font-size:var(--fs-xs)">low confidence — manual review</span></span>
+    <span class="row" style="gap:6px"><span class="ag-cell-pill MISSING">—</span><span class="muted" style="font-size:var(--fs-xs)">no fact extracted</span></span>
+  </div>
+  <div class="hash-cell" style="font-size:11px">audit head · {{ audit_head_hash|slice:":24" }}…</div>
+</div>
+
+<div id="praman-grid"
+     class="ag-theme-praman praman-grid-shell"
+     style="width: 100%;">
+</div>
+
+<div class="row between" style="margin-top:18px">
+  <span class="muted eyebrow">Click any cell to drill into the verdict's evidence trail →</span>
+  <a href="{% url 'officer:signoff' rfp.id %}" class="btn btn-primary btn-sm">Sign-off & evidence PDF</a>
+</div>
+
+<script>
+(function () {
+  // All values rendered into the DOM go through textContent or are
+  // appended as Element nodes — never innerHTML — so untrusted Block.text
+  // or rule_id strings cannot inject markup.
+  const dataUrl = "{% url 'officer:eval_grid_json' rfp.id %}";
+  const drilldownBase = "/officer/verdict/";
+
+  fetch(dataUrl, { credentials: "same-origin" })
+    .then(r => r.json())
+    .then(payload => bootGrid(payload))
+    .catch(err => {
+      const gridDiv = document.getElementById("praman-grid");
+      const msg = document.createElement("p");
+      msg.style.padding = "1em";
+      msg.style.color = "var(--fail)";
+      msg.style.fontFamily = "'Spectral', serif";
+      msg.style.fontStyle = "italic";
+      msg.textContent = "Failed to load verdict register: " + err;
+      gridDiv.appendChild(msg);
+    });
+
+  function statusCellRenderer(params) {
+    // Cell renders ONLY the status pill (+ a small override marker
+    // when applicable). The full rule_id and reason live in the
+    // tooltip and on the drilldown — cramming them in a 130 px column
+    // produced the truncated "rul…" / "abs…" mess in the screenshot.
+    const wrapper = document.createElement("span");
+    wrapper.style.display = "inline-flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "6px";
+    const cell = params.value;
+    if (!cell) {
+      const pill = document.createElement("span");
+      pill.className = "ag-cell-pill MISSING";
+      pill.textContent = "—";
+      wrapper.appendChild(pill);
+      return wrapper;
+    }
+    const safeStatus = String(cell.status || "").replace(/[^A-Z]/g, "");
+    const pill = document.createElement("span");
+    pill.className = "ag-cell-pill " + (safeStatus || "MISSING");
+    pill.textContent = safeStatus || "—";
+    // Tooltip carries the full rule_id + reason for hover inspection.
+    let tooltipBits = [];
+    if (cell.rule_id) tooltipBits.push("rule_id: " + cell.rule_id);
+    if (cell.reason) tooltipBits.push(cell.reason);
+    if (tooltipBits.length) pill.title = tooltipBits.join("\n");
+    wrapper.appendChild(pill);
+
+    // Day-15 fix #8 — show override provenance in the cell.
+    if (cell.is_overridden && cell.status_original) {
+      const dagger = document.createElement("span");
+      dagger.textContent = "†";
+      dagger.style.color = "var(--fail)";
+      dagger.style.fontSize = "12px";
+      dagger.style.fontWeight = "600";
+      dagger.title = "officer override · was " + cell.status_original;
+      wrapper.appendChild(dagger);
+    }
+    return wrapper;
+  }
+
+  function summaryCellRenderer(params) {
+    const s = params.value || {};
+    const wrapper = document.createElement("span");
+    wrapper.style.fontFamily = "'JetBrains Mono', monospace";
+    wrapper.style.fontSize = "11px";
+    wrapper.style.letterSpacing = "0.04em";
+    const fragments = [
+      { color: "var(--pass)",    value: (s.PASS || 0) + " P" },
+      { color: "var(--fail)",    value: (s.FAIL || 0) + " F" },
+      { color: "var(--abstain)", value: (s.ABSTAIN || 0) + " A" },
+      { color: "var(--missing)", value: (s.MISSING || 0) + " —" },
+    ];
+    fragments.forEach((frag, idx) => {
+      if (idx) {
+        const sep = document.createElement("span");
+        sep.style.color = "var(--rule-strong)";
+        sep.textContent = " · ";
+        wrapper.appendChild(sep);
+      }
+      const span = document.createElement("span");
+      span.style.color = frag.color;
+      span.style.fontWeight = "600";
+      span.textContent = frag.value;
+      wrapper.appendChild(span);
+    });
+    return wrapper;
+  }
+
+  function bootGrid(payload) {
+    const criteria = payload.criteria || [];
+    // Bidder col: pinned, narrow, fixed. Criterion cols: flex so they
+    // distribute remaining width and never overflow / never leave dead
+    // space. Σ col: fixed minimum so the small summary numbers don't
+    // get squeezed.
+    const columnDefs = [
+      {
+        headerName: "Bidder",
+        field: "bidder_code",
+        pinned: "left",
+        width: 130,
+        cellStyle: { fontFamily: "'Spectral', serif", fontWeight: "600", color: "var(--ink)", fontSize: "15px" },
+        valueFormatter: params => "Bidder " + params.value,
+      },
+      ...criteria.map(c => ({
+        headerName: c.code,
+        headerTooltip: c.title + (c.mandatory ? "  (mandatory)" : "  (optional)"),
+        field: c.code,
+        flex: 1,
+        minWidth: 96,
+        cellRenderer: statusCellRenderer,
+        cellClass: "grid-status-cell",
+        sortable: true,
+        comparator: (a, b) => {
+          const va = (a && a.status) || "ZZ";
+          const vb = (b && b.status) || "ZZ";
+          return va.localeCompare(vb);
+        },
+      })),
+      {
+        headerName: "Σ",
+        field: "_summary",
+        width: 200,
+        cellRenderer: summaryCellRenderer,
+        sortable: false,
+      },
+    ];
+
+    const gridOptions = {
+      columnDefs: columnDefs,
+      rowData: payload.rows,
+      defaultColDef: {
+        resizable: true,
+        sortable: false,
+        suppressMovable: true,
+      },
+      rowHeight: 52,
+      headerHeight: 44,
+      // autoHeight makes the grid grow to fit row count exactly — no
+      // 300-px void below 3 rows. The grid sizes itself to the data.
+      domLayout: "autoHeight",
+      suppressCellFocus: true,
+      onCellClicked: (event) => {
+        const c = event.value;
+        if (c && c.verdict_id) {
+          window.location = drilldownBase + Number(c.verdict_id) + "/";
+        }
+      },
+    };
+
+    const gridDiv = document.getElementById("praman-grid");
+    if (window.agGrid && agGrid.createGrid) {
+      agGrid.createGrid(gridDiv, gridOptions);
+    } else if (window.agGrid && agGrid.Grid) {
+      new agGrid.Grid(gridDiv, gridOptions);
+    } else {
+      const msg = document.createElement("p");
+      msg.style.padding = "1em";
+      msg.style.fontFamily = "'Spectral', serif";
+      msg.textContent = "AG Grid failed to load.";
+      gridDiv.appendChild(msg);
+    }
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% load officer_tags static %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}प्रमाण · Praman{% endblock %}</title>
+<meta name="description" content="Praman — evidence-grade tender evaluation, sealed and auditable.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'vendor/tailwind.built.css' %}">
+<link rel="stylesheet" href="{% static 'praman.css' %}">
+
+<script src="{% static 'vendor/htmx.min.js' %}"></script>
+
+<script src="{% static 'vendor/gsap.min.js' %}"></script>
+<script src="{% static 'vendor/ScrollTrigger.min.js' %}"></script>
+<script type="module" src="{% static 'vendor/ninja-keys.min.js' %}"></script>
+
+<script src="{% static 'praman-motion.js' %}" defer></script>
+
+{% block extra_head %}{% endblock %}
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a href="{% url 'officer:dashboard' %}" class="wordmark">
+      <span class="deva" aria-label="Praman in Devanagari">प्रमाण</span>
+      <span class="latin">Praman</span>
+    </a>
+
+    <div></div>{# spacer #}
+
+    <div class="masthead-meta">
+      {% if request.user.is_authenticated %}
+        <span id="audit-pill" class="audit-pill is-loading"
+              hx-get="{% url 'officer:audit_status' %}"
+              hx-trigger="load, every 60s"
+              hx-swap="outerHTML"
+              title="Audit chain · refreshes every 60s">audit&nbsp;…</span>
+        &nbsp;&nbsp;
+        <strong>{{ request.user.username }}</strong>&nbsp;·&nbsp;
+        <form method="post" action="{% url 'logout' %}" class="inline" style="display:inline">{% csrf_token %}<button type="submit" style="background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule-strong);cursor:pointer">Sign out</button></form>
+      {% else %}
+        <a href="{% url 'login' %}">Sign in</a>
+      {% endif %}
+    </div>
+
+    <div class="masthead-strapline">
+      Evidence-grade tender evaluation · sealed, audited, replayable · Theme 3 · CRPF
+    </div>
+  </div>
+</header>
+
+{% if messages %}
+<div style="max-width:1280px;margin:14px auto 0;padding:0 28px">
+  {% for message in messages %}
+    <div class="message
+      {% if message.tags == 'error' %}is-error
+      {% elif message.tags == 'warning' %}is-warning
+      {% elif message.tags == 'success' %}is-success{% endif %}">
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main class="layout">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="colophon">
+  <span><span class="deva">प्रमाण</span> · synthetic data only · no real bidder, tender, or PII</span>
+  <span>Theme 3 · CRPF · AI for Bharat 2026</span>
+</footer>
+
+<div id="toast-rail"></div>
+
+{% if request.user.is_authenticated %}
+<ninja-keys
+  placeholder="Search criteria, verdicts, jump to a screen…"
+  hideBreadcrumbs
+  data-rfp-id="{% if rfp %}{{ rfp.id }}{% elif verdict %}{{ verdict.criterion.rfp_id }}{% endif %}"
+></ninja-keys>
+{% endif %}
+
+</body>
+</html>

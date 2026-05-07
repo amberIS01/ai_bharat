@@ -1,0 +1,58 @@
+<aside class="docket">
+  <div class="docket-label">Pipeline</div>
+
+  <a href="{% url 'officer:upload_tender' %}"
+     class="docket-step{% if current_step == 'upload' %} is-active{% endif %}">
+    <span class="num">1</span>
+    <span class="label">Upload tender</span>
+  </a>
+
+  {% if rfp_id %}
+    <a href="{% url 'officer:criteria_review' rfp_id %}"
+       class="docket-step{% if current_step == 'criteria' %} is-active{% endif %}">
+      <span class="num">2</span>
+      <span class="label">Criteria</span>
+    </a>
+  {% else %}
+    <span class="docket-step is-disabled">
+      <span class="num">2</span>
+      <span class="label">Criteria</span>
+    </span>
+  {% endif %}
+
+  {% if rfp_id %}
+    <a href="{% url 'officer:eval_grid' rfp_id %}"
+       class="docket-step{% if current_step == 'eval' %} is-active{% endif %}">
+      <span class="num">3</span>
+      <span class="label">Verdict grid</span>
+    </a>
+  {% else %}
+    <span class="docket-step is-disabled">
+      <span class="num">3</span>
+      <span class="label">Verdict grid</span>
+    </span>
+  {% endif %}
+
+  <span class="docket-step{% if current_step == 'drilldown' %} is-active{% else %} is-disabled{% endif %}">
+    <span class="num">4</span>
+    <span class="label">Drill-down</span>
+  </span>
+
+  {% if rfp_id %}
+    <a href="{% url 'officer:signoff' rfp_id %}"
+       class="docket-step{% if current_step == 'signoff' %} is-active{% endif %}">
+      <span class="num">5</span>
+      <span class="label">Sign-off</span>
+    </a>
+  {% else %}
+    <span class="docket-step is-disabled">
+      <span class="num">5</span>
+      <span class="label">Sign-off</span>
+    </span>
+  {% endif %}
+
+  <div class="docket-foot">
+    <a href="{% url 'officer:dashboard' %}">Dashboard</a>
+    <a href="/admin/">Admin</a>
+  </div>
+</aside>

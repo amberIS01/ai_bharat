@@ -1,0 +1,151 @@
+{% extends "officer/base.html" %}
+{% block title %}Sign-off · {{ rfp.original_filename }}{% endblock %}
+{% block content %}
+
+<div class="crumb"><a href="{% url 'officer:eval_grid' rfp.id %}">← Verdict register</a></div>
+
+<div class="title-block">
+  <div>
+    <h1>Sign-off &amp; sealed evidence</h1>
+    <div class="subtitle">{{ rfp.original_filename }} · the audit chain stands at № {{ audit_count }} · ready to seal</div>
+  </div>
+</div>
+
+{% if not audit_chain_ok %}
+<div class="frame alert" style="margin-bottom:24px">
+  <strong>● Audit chain integrity broken.</strong>
+  {{ audit_chain_problems_total }} problem{{ audit_chain_problems_total|pluralize }} detected at render time.
+  Sign-off is not safe until the chain is repaired.
+  <ul class="mono" style="margin-top:8px;font-size:11px;line-height:1.6;padding-left:20px">
+    {% for p in audit_chain_problems %}<li>{{ p }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<section class="frame" style="border-top:2px solid var(--ink);padding:32px 36px;background:var(--paper-deep);margin-bottom:28px">
+  <div class="eyebrow" style="margin-bottom:6px">Cover affidavit</div>
+  <p class="drop-cap" style="font-family:'Spectral',serif;font-size:var(--fs-md);line-height:1.7;margin:0;color:var(--ink)">
+    By signing off this tender evaluation, the officer of record affirms that the verdicts in the register were emitted by the OPA policy engine on facts extracted from the bidder bundles, and that no verdict was overridden without an explicit reason recorded in this audit chain. The signed PDF below embeds the chain head hash <code class="mono" style="background:transparent;font-size:13px;color:var(--pass)">{{ audit_head_hash|slice:":24" }}…</code>; tampering with a single byte invalidates the signature.
+  </p>
+</section>
+
+<section style="display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;margin-bottom:36px">
+
+  <div class="frame frame-titled">
+    <div class="frame-title">Audit chain · head</div>
+    <div style="display:flex;gap:18px;align-items:center;margin-top:6px">
+      <div class="seal seal-hash">
+        <span class="seal-label">SEALED</span>
+        <span>{{ audit_head_hash|slice:":4" }}<br>{{ audit_head_hash|slice:"4:8" }}</span>
+      </div>
+      <div>
+        <div style="font-family:'Spectral',serif;font-size:2rem;font-weight:600;line-height:1">№ {{ audit_count }}</div>
+        <div class="eyebrow muted" style="margin-top:4px">entries appended</div>
+      </div>
+    </div>
+    <div class="hash-cell" style="margin-top:14px;word-break:break-all;font-size:11px;line-height:1.5;color:var(--ink-soft)">{{ audit_head_hash }}</div>
+    <p class="muted" style="font-size:var(--fs-xs);margin-top:14px;font-style:italic">
+      The next sign-off appends an <code class="mono" style="font-style:normal;font-size:11px">evidence.signed</code> entry; the generated PDF embeds the current head hash and is signed via pyHanko PAdES-B.
+    </p>
+    <form method="post" style="margin-top:18px">
+      {% csrf_token %}
+      <button class="btn btn-seal" type="submit" style="font-size:var(--fs-md);padding:10px 20px">
+        Seal &amp; export evidence PDF
+      </button>
+    </form>
+  </div>
+
+  <div class="frame frame-titled">
+    <div class="frame-title">Sealed evidence PDFs</div>
+    {% if signed_pdf_history %}
+      <a class="btn btn-primary btn-sm" href="{% url 'officer:evidence_pdf_download' rfp.id %}" style="margin-bottom:14px">
+        ↓ Download current PDF
+      </a>
+      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px">
+        {% for h in signed_pdf_history %}
+        <li style="border:1px solid {% if h.is_current %}var(--pass){% else %}var(--rule-strong){% endif %};background:{% if h.is_current %}var(--pass-bg){% else %}var(--paper){% endif %};padding:10px 12px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+            <span class="mono" style="font-size:11px;color:var(--ink);word-break:break-all">{{ h.filename }}</span>
+            <span class="pill {% if h.is_current %}is-pass{% else %}is-missing{% endif %}" style="margin-left:auto;flex-shrink:0">{% if h.is_current %}CURRENT{% else %}SUPERSEDED{% endif %}</span>
+          </div>
+          <div class="hash-cell" style="font-size:10px;color:var(--sepia);margin-bottom:4px">{{ h.size_bytes }} B · {{ h.modified|slice:":19" }}</div>
+          <div class="hash-cell" style="font-size:10px;word-break:break-all;color:var(--ink-soft)"><strong style="color:var(--sepia)">sha256 ·</strong> {{ h.sha256 }}</div>
+          {% if h.head_hash_at_sign %}
+          <div class="hash-cell" style="font-size:10px;margin-top:4px;color:var(--sepia)">
+            chain head at sign · <span class="mono" style="color:var(--ink-soft)">{{ h.head_hash_at_sign|slice:":24" }}…</span>
+            {% if h.seq_at_sign %} (seq № {{ h.seq_at_sign }}){% endif %}
+          </div>
+          {% if not h.is_current and h.events_since_sign %}
+            <div style="font-size:11px;color:var(--fail);margin-top:6px;font-style:italic;font-family:'Spectral',serif">
+              ⚠ {{ h.events_since_sign }} event{{ h.events_since_sign|pluralize }} appended since this PDF was sealed.
+            </div>
+          {% endif %}
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <em class="muted">No sealed PDFs for this tender yet.</em>
+    {% endif %}
+  </div>
+
+</section>
+
+<section style="margin-bottom:32px">
+  <div class="row between" style="align-items:baseline;margin-bottom:14px">
+    <div>
+      <h2 style="margin:0">Audit chain</h2>
+      <div class="muted" style="font-size:var(--fs-sm);margin-top:2px">
+        last 12 entries, drawn forward · click a block to scroll to its row
+      </div>
+    </div>
+    <span class="audit-pill"
+          style="background:transparent"><span class="counter" data-count="{{ audit_count }}">0</span> sealed</span>
+  </div>
+
+  {% if audit_chain_for_viz %}
+  <div id="hashviz" class="hashviz" data-entries="{{ audit_chain_for_viz|escape }}" style="margin-bottom:18px"></div>
+  {% endif %}
+
+  {% if audit_recent %}
+  <table class="ledger">
+    <thead>
+      <tr>
+        <th class="num" style="width:60px">№</th>
+        <th style="width:160px">Timestamp</th>
+        <th style="width:220px">Event</th>
+        <th>Entity</th>
+        <th class="num" style="width:200px">This hash</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in audit_recent %}
+      <tr data-seq="{{ e.seq }}">
+        <td class="num seq-num">{{ e.seq }}</td>
+        <td class="num muted">{{ e.ts|date:"Y-m-d H:i:s" }}</td>
+        <td><span class="mono" style="font-size:12px;color:var(--ink-soft)">{{ e.event_type }}</span></td>
+        <td><span class="muted" style="font-size:var(--fs-sm)">{{ e.payload_json.entity }}{% if e.payload_json.entity_id %} · № {{ e.payload_json.entity_id }}{% endif %}</span></td>
+        <td class="hash-cell" title="{{ e.this_hash }}">{{ e.this_hash|slice:":20" }}…</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="frame note">Audit chain is empty.</div>
+  {% endif %}
+</section>
+
+<style>
+  .ledger tr.is-highlighted td {
+    background: var(--pass-bg);
+    box-shadow: inset 3px 0 0 var(--pass);
+    transition: background 200ms, box-shadow 200ms;
+  }
+</style>
+
+<div class="frame note" style="font-style:normal;font-family:'Source Serif 4',serif;color:var(--ink-soft)">
+  <strong style="color:var(--ink);font-family:'Spectral',serif">Demo signature notice.</strong>
+  This evidence PDF is signed using a self-signed X.509 certificate generated locally. The signature is cryptographically valid — any byte-level edit invalidates it — but the certificate is not anchored in the CCA India trust chain. In production, Praman binds to a CCA-licensed Class-3 DSC token via PKCS#11 (eMudhra ProxKey, ePass2003).
+</div>
+
+{% endblock %}

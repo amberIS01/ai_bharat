@@ -1,0 +1,139 @@
+{% extends "officer/base.html" %}
+{% block title %}Dashboard · प्रमाण{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-eyebrow">
+    प्रमाण &nbsp;·&nbsp; <span class="mono" style="letter-spacing:0.04em">EVIDENCE-GRADE TENDER EVALUATION</span>
+  </div>
+
+  <div class="hero-row">
+    <div class="hero-headline-block">
+      <div class="hero-numeric">
+        <span class="counter" data-count="{{ audit_count }}">{{ audit_count }}</span>
+      </div>
+      <p class="hero-tag">events <em>sealed</em> in the audit chain</p>
+    </div>
+
+    <div class="hero-cta-block">
+      <p class="hero-blurb">
+        Every verdict is criterion-level explainable. Low-confidence facts route to manual review &mdash; never silent disqualification. Officer signs off; the chain seals; the PDF goes out.
+      </p>
+      {% if rfp_count > 0 %}
+      <a href="{% url 'officer:eval_grid' rfps.first.id %}" class="cta">Open the verdict register</a>
+      {% else %}
+      <a href="{% url 'officer:upload_tender' %}" class="cta">Enter your first tender</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">{{ rfp_count }}</div>
+      <div class="hero-stat-lbl">Tenders on record</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">{{ bidder_count }}</div>
+      <div class="hero-stat-lbl">Bidders enrolled</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">{{ verdict_distribution.total }}</div>
+      <div class="hero-stat-lbl">Verdicts emitted</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">
+        {% if opa_ok %}<span style="color:#E5B556">●</span> live{% else %}<span style="color:#B83030">●</span> down{% endif %}
+      </div>
+      <div class="hero-stat-lbl">Policy engine</div>
+    </div>
+  </div>
+</section>
+
+{% if not opa_ok %}
+<div class="frame alert" style="margin-bottom:18px">
+  <strong>Policy engine offline.</strong>
+  Verdicts cannot be evaluated until OPA is reachable. From a separate terminal:
+  <code class="mono" style="display:block;margin-top:6px">deploy/bin/opa run --server --addr 127.0.0.1:8181 --log-level error deploy/rules/</code>
+</div>
+{% endif %}
+
+{# Verdict distribution + Hash chain — full-width strip on light paper #}
+<section class="dist-strip" style="margin:0 0 36px">
+  {% if verdict_distribution.total > 0 %}
+  <div class="row between" style="margin-bottom:8px;align-items:baseline">
+    <div class="eyebrow">Verdict distribution · {{ verdict_distribution.total }} emitted</div>
+    <div class="muted" style="font-size:var(--fs-xs);font-style:italic">counted through approved overrides</div>
+  </div>
+  <div class="verdict-bar-light">
+    {% if verdict_distribution.PASS.n %}<div class="verdict-bar-seg pass" style="flex:{{ verdict_distribution.PASS.n }}" title="PASS · {{ verdict_distribution.PASS.n }} ({{ verdict_distribution.PASS.pct }}%)"></div>{% endif %}
+    {% if verdict_distribution.FAIL.n %}<div class="verdict-bar-seg fail" style="flex:{{ verdict_distribution.FAIL.n }}" title="FAIL · {{ verdict_distribution.FAIL.n }} ({{ verdict_distribution.FAIL.pct }}%)"></div>{% endif %}
+    {% if verdict_distribution.ABSTAIN.n %}<div class="verdict-bar-seg abstain" style="flex:{{ verdict_distribution.ABSTAIN.n }}" title="ABSTAIN · {{ verdict_distribution.ABSTAIN.n }} ({{ verdict_distribution.ABSTAIN.pct }}%)"></div>{% endif %}
+  </div>
+  <div class="row" style="gap:18px;flex-wrap:wrap;margin-top:8px;font-family:'Spectral',serif;font-size:var(--fs-xs);color:var(--sepia)">
+    <span><span class="swatch swatch-pass"></span> {{ verdict_distribution.PASS.n }} pass · {{ verdict_distribution.PASS.pct }}%</span>
+    <span><span class="swatch swatch-fail"></span> {{ verdict_distribution.FAIL.n }} fail · {{ verdict_distribution.FAIL.pct }}%</span>
+    <span><span class="swatch swatch-abstain"></span> {{ verdict_distribution.ABSTAIN.n }} abstain · {{ verdict_distribution.ABSTAIN.pct }}%</span>
+  </div>
+  {% else %}
+  <div class="frame note" style="font-style:italic">No verdicts emitted yet.</div>
+  {% endif %}
+
+  {% if audit_chain_for_viz %}
+  <div class="row between" style="margin:24px 0 8px;align-items:baseline">
+    <div class="eyebrow">Hash chain · last 12 events</div>
+    {% if rfps %}<a href="{% url 'officer:signoff' rfps.first.id %}" class="muted" style="font-size:var(--fs-xs);text-decoration:none;border-bottom:1px dotted var(--rule-strong)">view full chain →</a>{% endif %}
+  </div>
+  <div id="hashviz" class="hashviz" data-entries="{{ audit_chain_for_viz|escape }}" style="margin:0"></div>
+  {% endif %}
+</section>
+
+<div class="row between" style="align-items:end;margin-bottom:14px;gap:18px">
+  <div>
+    <h2 style="margin:0">The Register of Tenders</h2>
+    <div class="muted" style="font-style:italic;margin-top:2px">Every RFP entered into evaluation, with its sealed audit chain.</div>
+  </div>
+  <a href="{% url 'officer:upload_tender' %}" class="btn btn-primary">+ Enter new tender</a>
+</div>
+
+{% if rfps %}
+<table class="ledger">
+  <thead>
+    <tr>
+      <th class="num" style="width:64px">№</th>
+      <th>Tender</th>
+      <th class="num" style="width:80px">Pages</th>
+      <th class="num" style="width:140px">Entered</th>
+      <th style="width:280px">Disposition</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rfp in rfps %}
+    <tr>
+      <td class="num seq-num">№ {{ rfp.id }}</td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <strong style="font-family:'Spectral',serif;font-weight:600">{{ rfp.original_filename }}</strong>
+          <span class="hash-cell">sha256 · {{ rfp.sha256|slice:":16" }}…</span>
+        </div>
+      </td>
+      <td class="num muted">{{ rfp.page_count|default:"—" }}</td>
+      <td class="num muted">{{ rfp.created_at|date:"Y-m-d" }}<br><span style="font-size:10px">{{ rfp.created_at|date:"H:i" }}</span></td>
+      <td>
+        <a href="{% url 'officer:upload_bidder' rfp.id %}" class="btn btn-ghost btn-sm">Bidders</a>
+        <a href="{% url 'officer:criteria_review' rfp.id %}" class="btn btn-ghost btn-sm">Criteria</a>
+        <a href="{% url 'officer:eval_grid' rfp.id %}" class="btn btn-ghost btn-sm">Verdicts</a>
+        <a href="{% url 'officer:signoff' rfp.id %}" class="btn btn-ghost btn-sm">Sign-off</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="frame note" style="text-align:center;padding:40px 24px">
+  <div style="font-family:'Spectral',serif;font-size:1.4rem;color:var(--ink);margin-bottom:8px">No tenders entered yet.</div>
+  <p class="muted" style="font-style:italic;margin:0 0 18px">Begin the evaluation by uploading an RFP. Praman fingerprints the file, parses every clause, and stores it as the first link in this audit chain.</p>
+  <a href="{% url 'officer:upload_tender' %}" class="btn btn-primary">+ Enter your first tender</a>
+</div>
+{% endif %}
+
+{% endblock %}

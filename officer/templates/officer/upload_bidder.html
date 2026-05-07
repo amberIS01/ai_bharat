@@ -1,0 +1,64 @@
+{% extends "officer/base.html" %}
+{% block title %}Bidders · {{ rfp.original_filename }}{% endblock %}
+{% block content %}
+
+<div class="crumb"><a href="{% url 'officer:dashboard' %}">Dashboard</a> · Tender № {{ rfp.id }} · Bidders</div>
+
+<div class="title-block">
+  <div>
+    <h1>Bidder bundles</h1>
+    <div class="subtitle">{{ rfp.original_filename }} · upload one bundle per bidder, then proceed to criteria extraction.</div>
+  </div>
+</div>
+
+<section style="display:grid;grid-template-columns:1fr 320px;gap:36px;align-items:start">
+
+  <form method="post" enctype="multipart/form-data" class="frame frame-titled" style="border-top:2px solid var(--ink);padding:28px 32px">
+    <div class="frame-title">Bidder bundle · upload</div>
+    {% csrf_token %}
+    {% for field in form %}
+      <div class="stack stack-tight" style="margin-bottom:18px">
+        <label>{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+        {% for err in field.errors %}<p class="help" style="color:var(--fail)">{{ err }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Upload bundle</button>
+  </form>
+
+  <aside class="stack stack-loose">
+    <div class="frame frame-titled">
+      <div class="frame-title">Bidders on the docket</div>
+      {% if bidder_codes %}
+      <ul style="list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:6px">
+        {% for code in bidder_codes %}
+        <li class="row" style="gap:10px;padding:6px 0;border-bottom:var(--rule-line)">
+          <span class="seal" style="width:42px;height:42px;font-size:14px;border-width:2px">
+            <span style="position:relative;z-index:1;font-family:'Spectral',serif">{{ code }}</span>
+          </span>
+          <div>
+            <div style="font-family:'Spectral',serif;font-weight:600">Bidder {{ code }}</div>
+            <div class="hash-cell" style="font-size:10px;color:var(--sepia)">enrolled</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <em class="muted">None enrolled — upload a bundle on the left.</em>
+      {% endif %}
+    </div>
+
+    <div class="frame frame-titled">
+      <div class="frame-title">Onward</div>
+      <ol class="mono" style="padding-left:20px;font-size:var(--fs-sm);line-height:1.8;color:var(--ink-soft);margin:6px 0 0">
+        <li><a href="{% url 'officer:criteria_review' rfp.id %}">Extract criteria &amp; facts</a></li>
+        <li><a href="{% url 'officer:eval_grid' rfp.id %}">Evaluate verdicts</a></li>
+        <li><a href="{% url 'officer:signoff' rfp.id %}">Seal &amp; sign-off</a></li>
+      </ol>
+    </div>
+  </aside>
+
+</section>
+
+{% endblock %}
